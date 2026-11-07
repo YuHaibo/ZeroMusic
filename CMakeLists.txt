@@ -20,7 +20,7 @@ set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 set(USE_DESKTOP ON CACHE BOOL "Build the desktop emulator target with LVGL SDL support")
 set(APP_NAME "${PROJECT_NAME}" CACHE STRING "Application name used for installed asset lookup")
 set(APP_ASSETS_ROOT "" CACHE PATH "Optional runtime assets root. Expected subdirectories include fonts/")
-set(APP_CONFIG_FILE "" CACHE FILEPATH "Application config file; defaults to the repository file on desktop and /etc/template-app.conf on device")
+set(APP_CONFIG_FILE "" CACHE FILEPATH "Application config file; defaults to the repository file on desktop and /etc/zero-music.conf on device")
 set(APP_KEY_INPUT_DEVICE "" CACHE STRING "Optional Linux evdev keyboard/keypad device path, e.g. /dev/input/event0")
 set(APP_FRAMEBUFFER_DEVICE "/dev/fb0" CACHE STRING "Linux framebuffer device path used by embedded builds")
 set(APP_DRM_DEVICE "/dev/dri/card0" CACHE STRING "Linux DRM device path used when APP_USE_DRM=ON")
@@ -33,9 +33,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compile_commands.json" F
 
 if(NOT APP_CONFIG_FILE)
     if(USE_DESKTOP)
-        set(APP_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/config/template-app.conf")
+        set(APP_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/config/zero-music.conf")
     else()
-        set(APP_CONFIG_FILE "/etc/template-app.conf")
+        set(APP_CONFIG_FILE "/etc/zero-music.conf")
     endif()
 endif()
 
@@ -106,7 +106,23 @@ if(USE_DESKTOP)
     # =========================
     # fmt
     # =========================
-    find_package(fmt CONFIG REQUIRED)
+    find_package(fmt CONFIG QUIET)
+    if(NOT fmt_FOUND)
+        message(STATUS "fmt not found; fetching it")
+        FetchContent_Declare(
+            fmt
+            GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+            GIT_TAG        10.1.1
+            GIT_SHALLOW    TRUE
+        )
+        set(FMT_INSTALL OFF CACHE BOOL "" FORCE)
+        set(FMT_TEST OFF CACHE BOOL "" FORCE)
+        set(FMT_DOC OFF CACHE BOOL "" FORCE)
+        FetchContent_MakeAvailable(fmt)
+        if(TARGET fmt AND NOT TARGET fmt::fmt)
+            add_library(fmt::fmt ALIAS fmt)
+        endif()
+    endif()
 
     # =========================
     # ZLIB
@@ -396,6 +412,42 @@ endif()
 
 
 # ====================================================
+# JSON and the core IPC client
+# ====================================================
+find_package(nlohmann_json CONFIG QUIET)
+if(NOT TARGET nlohmann_json::nlohmann_json)
+    message(STATUS "nlohmann_json not found; fetching it")
+    FetchContent_Declare(
+        nlohmann_json
+        URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+    FetchContent_MakeAvailable(nlohmann_json)
+endif()
+
+find_package(Threads REQUIRED)
+
+file(GLOB IPC_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ipc/*.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/ipc/*.cpp"
+)
+
+add_library(${PROJECT_NAME}_ipc STATIC
+    ${IPC_SOURCES}
+)
+
+target_include_directories(${PROJECT_NAME}_ipc
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/ipc"
+)
+
+target_link_libraries(${PROJECT_NAME}_ipc
+    PUBLIC
+        nlohmann_json::nlohmann_json
+        Threads::Threads
+)
+
+# ====================================================
 # Platform sources
 # ====================================================
 # Create application platform sources and static library
@@ -492,11 +544,13 @@ target_include_directories(${PROJECT_NAME}_view
         ${CMAKE_CURRENT_SOURCE_DIR}/src/viewmodel
         ${CMAKE_CURRENT_SOURCE_DIR}/src/model
         ${CMAKE_CURRENT_SOURCE_DIR}/src/platform
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ipc
 )
 
 target_link_libraries(${PROJECT_NAME}_view
     PUBLIC
         lvgl
+        ${PROJECT_NAME}_ipc
         ${PROJECT_NAME}_reactive
         ${PROJECT_NAME}_platform
 )
@@ -524,6 +578,7 @@ target_include_directories(${PROJECT_NAME}_viewmodel
 target_link_libraries(${PROJECT_NAME}_viewmodel
     PUBLIC
         lvgl
+        ${PROJECT_NAME}_ipc
         ${PROJECT_NAME}_reactive
         ${PROJECT_NAME}_model
         ${PROJECT_NAME}_platform
@@ -564,6 +619,11 @@ target_link_libraries(logger
         ${PLATFORM_LIBS}
 )
 
+target_link_libraries(${PROJECT_NAME}_viewmodel
+    PUBLIC
+        logger
+)
+
 add_library(${PROJECT_NAME}_core STATIC
     ${APP_SOURCES}
 )
@@ -578,6 +638,7 @@ target_include_directories(${PROJECT_NAME}_core
         ${CMAKE_CURRENT_SOURCE_DIR}/src/viewmodel
         ${CMAKE_CURRENT_SOURCE_DIR}/src/model
         ${CMAKE_CURRENT_SOURCE_DIR}/src/platform
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ipc
 )
 
 target_compile_definitions(${PROJECT_NAME}_core

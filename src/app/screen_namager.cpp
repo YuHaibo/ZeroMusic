@@ -1,13 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2026 M5Stack Technology CO LTD
+ * SPDX-FileCopyrightText: 2026 Zero Music contributors
  *
- * SPDX-License-Identifier: MIT
+ * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
 #include "screen_manager.h"
 
-#include "apple_screen.h"
-#include "butter_screen.h"
+#include "home_screen.h"
+#include "message_screen.h"
+#include "now_playing_screen.h"
 
 namespace app {
 namespace {
@@ -24,8 +25,37 @@ void current_page_observer(lv_observer_t* observer, lv_subject_t* subject) {
     if (!manager) {
         return;
     }
-
     manager->request_page(static_cast<model::AppPage>(lv_subject_get_int(subject)));
+}
+
+struct Placeholder {
+    const char* title;
+    const char* message;
+};
+
+Placeholder placeholder_for(model::AppPage page) {
+    switch (page) {
+        case model::AppPage::Browse:
+            return {"Browse", "Plugin and library browsing arrives with the source pages."};
+        case model::AppPage::Search:
+            return {"Search", "Search arrives with the library pages."};
+        case model::AppPage::Detail:
+            return {"Detail", "Album, artist and playlist pages arrive with the library pages."};
+        case model::AppPage::Lyrics:
+            return {"Lyrics", "Lyrics arrive with the Now Playing pages."};
+        case model::AppPage::Queue:
+            return {"Queue", "The queue arrives with the player pages."};
+        case model::AppPage::Settings:
+            return {"Settings", "Settings arrives with the plugin manager."};
+        case model::AppPage::Plugins:
+            return {"Plugins", "Plugin install and settings arrive with the plugin manager."};
+        case model::AppPage::SignIn:
+            return {"Sign in", "QR sign-in arrives with the plugin manager."};
+        case model::AppPage::Help:
+            return {"Help", "Fn+H shows the keys on every page."};
+        default:
+            return {"Zero Music", ""};
+    }
 }
 
 } // namespace
@@ -40,6 +70,7 @@ ScreenManager::~ScreenManager() {
         lv_observer_remove(page_observer_);
         page_observer_ = nullptr;
     }
+    current_screen_.reset();
 }
 
 void ScreenManager::start() {
@@ -51,18 +82,7 @@ void ScreenManager::start() {
                                                          current_page_observer,
                                                          this,
                                                          nullptr);
-}
-
-void ScreenManager::show_apple_screen() {
-    load_screen(std::make_unique<screen::AppleScreen>(view_model_, assets_));
-    loaded_page_ = model::AppPage::Apple;
-    has_loaded_page_ = true;
-}
-
-void ScreenManager::show_butter_screen() {
-    load_screen(std::make_unique<screen::ButterScreen>(view_model_, assets_));
-    loaded_page_ = model::AppPage::Butter;
-    has_loaded_page_ = true;
+    flush_requested_page();
 }
 
 void ScreenManager::request_page(model::AppPage page) {
@@ -82,25 +102,43 @@ void ScreenManager::flush_requested_page() {
         return;
     }
 
-    if (requested_page_ == model::AppPage::Butter) {
-        show_butter_screen();
-        return;
+    switch (requested_page_) {
+        case model::AppPage::Home:
+            load_screen(std::make_unique<screen::HomeScreen>(view_model_, assets_), requested_page_);
+            break;
+        case model::AppPage::NowPlaying:
+            load_screen(std::make_unique<screen::NowPlayingScreen>(view_model_, assets_), requested_page_);
+            break;
+        default: {
+            const auto text = placeholder_for(requested_page_);
+            load_screen(std::make_unique<screen::MessageScreen>(view_model_, assets_, text.title, text.message),
+                        requested_page_);
+            break;
+        }
     }
+}
 
-    show_apple_screen();
+bool ScreenManager::handle_key(std::uint32_t key, bool long_pressed) {
+    return current_screen_ && current_screen_->handle_key(key, long_pressed);
 }
 
 lv_obj_t* ScreenManager::current_screen() const {
     return current_screen_ ? current_screen_->root() : nullptr;
 }
 
-void ScreenManager::load_screen(std::unique_ptr<screen::BaseScreen> next_screen) {
-    if (!next_screen || !next_screen->root()) {
+void ScreenManager::load_screen(std::unique_ptr<screen::BaseScreen> next_screen, model::AppPage page) {
+    if (!next_screen) {
+        return;
+    }
+    next_screen->init();
+    if (!next_screen->root()) {
         return;
     }
 
     lv_screen_load(next_screen->root());
     current_screen_ = std::move(next_screen);
+    loaded_page_ = page;
+    has_loaded_page_ = true;
 }
 
 } // namespace app

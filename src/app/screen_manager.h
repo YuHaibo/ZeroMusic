@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2026 M5Stack Technology CO LTD
+ * SPDX-FileCopyrightText: 2026 Zero Music contributors
  *
- * SPDX-License-Identifier: MIT
+ * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
 #pragma once
@@ -11,6 +11,7 @@
 #include "base_viewmodel.h"
 #include "lvgl.h"
 
+#include <cstdint>
 #include <memory>
 
 namespace app {
@@ -24,21 +25,20 @@ public:
     ScreenManager& operator=(const ScreenManager&) = delete;
 
     void start();
-    void show_apple_screen();
-    void show_butter_screen();
     void request_page(model::AppPage page);
     void flush_requested_page();
+    bool handle_key(std::uint32_t key, bool long_pressed);
     lv_obj_t* current_screen() const;
 
 private:
-    void load_screen(std::unique_ptr<screen::BaseScreen> next_screen);
+    void load_screen(std::unique_ptr<screen::BaseScreen> next_screen, model::AppPage page);
 
     viewmodel::BaseViewModel& view_model_;
     AssetManager& assets_;
     std::unique_ptr<screen::BaseScreen> current_screen_;
     lv_observer_t* page_observer_ = nullptr;
-    model::AppPage requested_page_ = model::AppPage::Apple;
-    model::AppPage loaded_page_ = model::AppPage::Apple;
+    model::AppPage requested_page_ = model::AppPage::Home;
+    model::AppPage loaded_page_ = model::AppPage::Home;
     bool has_loaded_page_ = false;
     bool page_switch_scheduled_ = false;
 };

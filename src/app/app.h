@@ -6,11 +6,13 @@
 
 #pragma once
 
+#include <string>
+
 namespace app {
 
 class Application {
 public:
-    int run();
+    int run(const std::string& socket_path = {});
 };
 
 } // namespace app

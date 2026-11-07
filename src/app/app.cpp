@@ -47,7 +47,7 @@
 #endif
 
 #ifndef APP_CONFIG_FILE
-#define APP_CONFIG_FILE "template-app.conf"
+#define APP_CONFIG_FILE "zero-music.conf"
 #endif
 
 namespace app {
@@ -72,13 +72,13 @@ std::string writable_config_path() {
     if (const char* xdg_config_home = std::getenv("XDG_CONFIG_HOME")) {
         const std::filesystem::path root(xdg_config_home);
         if (!root.empty() && root.is_absolute()) {
-            return (root / "template-app" / "template-app.conf").string();
+            return (root / "zero-music" / "zero-music.conf").string();
         }
     }
     if (const char* home = std::getenv("HOME")) {
         const std::filesystem::path root(home);
         if (!root.empty() && root.is_absolute()) {
-            return (root / ".config" / "template-app" / "template-app.conf").string();
+            return (root / ".config" / "zero-music" / "zero-music.conf").string();
         }
     }
     return APP_CONFIG_FILE;
@@ -110,8 +110,11 @@ void persist_dark_mode_observer(lv_observer_t* observer, lv_subject_t* subject) 
 
 class ShortcutController {
 public:
-    ShortcutController(viewmodel::BaseViewModel& view_model, AssetManager& assets)
+    ShortcutController(viewmodel::BaseViewModel& view_model,
+                       AssetManager& assets,
+                       ScreenManager& screens)
         : view_model_(view_model),
+          screens_(screens),
           toast_(std::make_unique<view::widgets::Toast>(lv_layer_top(), view_model, assets)),
           help_popup_(std::make_unique<view::widgets::HelpPopup>(lv_layer_top(), view_model, assets)) {
         toast_->build();
@@ -169,48 +172,45 @@ private:
             return true;
         }
 
-        const bool is_escape = key == LV_KEY_ESC;
-        const bool is_home_exit_key =
-            key == '4' &&
-            ((!long_pressed && view_model_.current_page() == model::AppPage::Apple) ||
-             (long_pressed && exit_key_pressed_ == key));
-        if (!is_escape && !is_home_exit_key) {
-            return false;
-        }
-
-        if (long_pressed) {
-            if (exit_key_pressed_ == key && exit_armed_) {
+        if (key == LV_KEY_ESC) {
+            if (long_pressed) {
                 toast_->hide();
                 view_model_.request_quit();
             }
+            else {
+                view_model_.go_back();
+            }
+            return true;
         }
-        else {
-            exit_key_pressed_ = key;
-            exit_armed_ = view_model_.current_page() == model::AppPage::Apple;
-            if (exit_armed_) {
-                toast_->show_persistent_highlighted("Hold ",
-                                                    "ESC",
-                                                    " to exit",
-                                                    view::widgets::ToastTone::Warning);
+
+        // The transport works on every page, as on the official Music.
+        if (!long_pressed) {
+            switch (key) {
+                case '4':
+                    view_model_.show_page(model::AppPage::NowPlaying);
+                    return true;
+                case '5':
+                    view_model_.previous();
+                    return true;
+                case '6':
+                case ' ':
+                    view_model_.toggle_play();
+                    return true;
+                case '7':
+                    view_model_.next();
+                    return true;
+                case '8':
+                    view_model_.cycle_repeat();
+                    return true;
+                default:
+                    break;
             }
         }
-        return true;
+
+        return screens_.handle_key(key, long_pressed);
     }
 
-    void handle_release(uint32_t key) {
-        if (key != exit_key_pressed_) {
-            return;
-        }
-
-        if (exit_armed_) {
-            toast_->hide();
-        } else if (key == LV_KEY_ESC &&
-                   view_model_.current_page() == model::AppPage::Butter) {
-            view_model_.show_apple_page();
-        }
-        exit_key_pressed_ = 0;
-        exit_armed_ = false;
-    }
+    void handle_release(uint32_t) {}
 
     static bool global_key_listener(uint32_t key,
                                     const char*,
@@ -228,10 +228,9 @@ private:
     }
 
     viewmodel::BaseViewModel& view_model_;
+    ScreenManager& screens_;
     std::unique_ptr<view::widgets::Toast> toast_;
     std::unique_ptr<view::widgets::HelpPopup> help_popup_;
-    uint32_t exit_key_pressed_{0};
-    bool exit_armed_{false};
 };
 
 #if !USE_DESKTOP
@@ -268,9 +267,9 @@ lv_display_t* init_device_display() {
 
 } // namespace
 
-int Application::run() {
+int Application::run(const std::string& socket_path) {
     logger::Logger::init();
-    logger::Logger::set_tag("template");
+    logger::Logger::set_tag("zero-music");
 
     lv_init();
 
@@ -320,9 +319,18 @@ int Application::run() {
     simulator_frame.bind_dark_mode(view_model.dark_mode_subject());
 #endif
 
+    view_model.start(socket_path.empty() ? ipc::default_socket_path() : socket_path);
+
     ScreenManager screen_manager(view_model, assets);
     screen_manager.start();
-    ShortcutController shortcuts(view_model, assets);
+    ShortcutController shortcuts(view_model, assets, screen_manager);
+
+    auto* ipc_timer = lv_timer_create(
+        [](lv_timer_t* timer) {
+            static_cast<viewmodel::BaseViewModel*>(lv_timer_get_user_data(timer))->poll();
+        },
+        20,
+        &view_model);
 
     DarkModePersistence dark_mode_persistence{user_config_path, view_model.is_dark_mode()};
     auto* dark_mode_observer = lv_subject_add_observer(view_model.dark_mode_subject(),
@@ -336,6 +344,11 @@ int Application::run() {
 
     LOG_INFO("LVGL app started at {}x{}", lv_display_get_horizontal_resolution(display),
              lv_display_get_vertical_resolution(display));
+
+    const char* screenshot_after = std::getenv("ZERO_MUSIC_SCREENSHOT");
+    const bool screenshot_exit = std::getenv("ZERO_MUSIC_SCREENSHOT_EXIT") != nullptr;
+    bool screenshot_taken = false;
+    int frames = 0;
     while (running
 #if USE_DESKTOP
            && simulator_frame.process_events()
@@ -343,8 +356,24 @@ int Application::run() {
     ) {
         lv_timer_handler();
         lv_delay_ms(5);
+        if (screenshot_after && !screenshot_taken && ++frames > 80) {
+            screenshot_taken = true;
+            const auto shot = platform::screenshot::capture_active_screen();
+            if (shot.success) {
+                LOG_INFO("screenshot saved: {}", shot.path);
+            }
+            else {
+                LOG_WARN("screenshot failed: {}", shot.error);
+            }
+            if (screenshot_exit) {
+                running = false;
+            }
+        }
     }
 
+    if (ipc_timer) {
+        lv_timer_delete(ipc_timer);
+    }
     if (quit_observer) {
         lv_observer_remove(quit_observer);
     }

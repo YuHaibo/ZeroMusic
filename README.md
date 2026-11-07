@@ -2,26 +2,26 @@
   <picture>
     <source
       media="(prefers-color-scheme: dark)"
-      srcset="./screenshot/app-simulator-dark-darwin.png"
+      srcset="./screenshot/zero-music-now-playing.png"
     />
     <source
       media="(prefers-color-scheme: light)"
-      srcset="./screenshot/app-simulator-light-darwin.png"
+      srcset="./screenshot/zero-music-home.png"
     />
   <img
-    src="./screenshot/app-simulator-light-darwin.png"
-    alt="CardputerZero Template running in the desktop simulator"
+    src="./screenshot/zero-music-home.png"
+    alt="Zero Music running in the desktop simulator"
     width="315"
   />
   </picture>
 </p>
 
 <div align="center">
-    <h1>CardputerZero Application Template</h1>
+    <h1>Zero Music</h1>
 </div>
 
 <div align="center">
-  <p>A simple starter template for building embedded Linux GUI applications with LVGL and CMake.</p>
+  <p>A Cardputer Zero music player: local files and MyGo Music plugins, with a keyboard-first LVGL interface.</p>
 </div>
 
 <p align="center" style="margin: 20px 0; display: flex; justify-content: center; flex-wrap: wrap; gap: 12px;">
@@ -39,23 +39,25 @@
     />
   </a>
 </p>
-It is intended to be used as a clean development baseline: desktop builds use an SDL hardware-accelerated compositor for fast UI preview, while device builds use the Linux/LVGL platform drivers.
+Zero Music is two processes: a Go core (library, player, plugins, settings) and a C++/LVGL UI that talks to it over a Unix-socket JSON-RPC protocol. Desktop builds use an SDL simulator; the device builds against Linux fbdev/evdev.
 
 ## Project Overview
 
 In this example project, we used small MVVM-style structure around LVGL:
 
-- **UI layer**: screens and widgets are implemented with LVGL objects. `BaseScreen` owns the page root, title bar, nav bar, and page content. Widgets derive from `BaseWidgets` and expose a `build()` entry point.
-- **Data model**: `BaseModel` stores application state such as current page and theme mode.
-- **View model**: `BaseViewModel` exposes model state as LVGL observer subjects and provides UI actions such as page switching, counter updates, theme toggle, and quit request.
+- **UI layer**: screens and widgets are implemented with LVGL objects. `BaseScreen` owns the page root, status bar, and page content. Widgets derive from `BaseWidgets` and expose a `build()` entry point.
+- **Data model**: `BaseModel` stores the current page, connection state, track and playback state.
+- **View model**: `BaseViewModel` owns the IPC client, publishes model state as LVGL subjects, and sends player commands to the core.
 - **Reactive/data binding**: `src/reactive` wraps LVGL observer subjects and common bindings so labels, styles, flags, widget values, and events can be connected to application state.
 - **Data flow**: user input triggers widget callbacks, callbacks update `BaseViewModel`, view model publishes subjects, and bound UI objects refresh automatically through LVGL observers.
-- **Platform layer**: platform code owns Linux input integration and other hardware-facing services. The nav bar maps hardware/keyboard keys `4` to `8`, plus `ESC` for quit.
+- **Platform layer**: platform code owns Linux input integration, screenshots and hardware status.
+- **Core**: `core/` is a Go module with the local library, player, plugin host, settings and the socket server. See [docs/implementation-status.md](docs/implementation-status.md).
 
-Current demo UI:
+Current UI:
 
-- Page 1: Hello World, font weight toggle, LVGL version info, light/dark theme toggle, page navigation.
-- Page 2: Counter page, increment/decrement actions, simple page navigation.
+- Home: source, connection state, and entries for Now Playing, Browse, Search, Settings, Plugins and Help.
+- Now Playing: track, artist, album, progress, time and the transport keys.
+- Keys: `4` Now Playing, `5` previous, `6`/Space play-pause, `7` next, `8` repeat, short `ESC` back, hold `ESC` exit, `Fn+H` help, `Fn+J` screenshot.
 
 ## Repository Layout
 

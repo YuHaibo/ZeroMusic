@@ -61,15 +61,45 @@
 - 冒烟用 Unix socket 客户端发送 `hello`、`sources.list`、`player.playTracks`、
   `player.state`、`quit`，core 正常停止并删除 socket。
 
+### M3 UI 基础（已开始）
+
+- 新增 `src/ipc/client.{h,cpp}`：Unix socket、4 字节大端帧、非阻塞读写、
+  JSON 请求/响应、事件回调、断线重连；网络线程与 LVGL 线程分离，`poll()`
+  在 LVGL 线程投递回调。
+- `src/model/base_model` 与 `src/viewmodel/base_viewmodel` 改为播放器状态：
+  连接状态、源、曲目、进度、音量、循环、随机、页面栈；操作通过 IPC
+  发送 `player.*`。
+- 新页面：Home（菜单/源/连接状态）、Now Playing（封面占位、标题/艺人/
+  专辑、进度、时间、两行键位提示）、其余页面先用 MessageScreen 占位。
+- 全局键位：`4` Now Playing、`5` 上一首、`6`/Space 播放暂停、
+  `7` 下一首、`8` 循环模式、短 Esc 返回、长 Esc 退出、Fn+H 帮助、
+  Fn+J 截图。
+- 桌面 SDL 构建已通过；与 core 真实连接并显示 demo 插件曲目。
+- 新增开发钩子：`ZERO_MUSIC_SCREENSHOT`、`ZERO_MUSIC_SCREENSHOT_EXIT`、
+  `ZERO_MUSIC_SCREENSHOT_DIR` 用于无头截图；`ZERO_MUSIC_START_PAGE=now-playing`
+  可直接打开 Now Playing。
+- 截图：[Home](../screenshot/zero-music-home.png) /
+  [Now Playing](../screenshot/zero-music-now-playing.png)。
+
+```sh
+cmake -S . -B build/dev -G "Unix Makefiles" -DUSE_DESKTOP=ON \
+  -DCMAKE_BUILD_TYPE=Debug -DFETCHCONTENT_BASE_DIR="$PWD/.cache/dev-deps"
+cmake --build build/dev -j8
+./build/dev/zero-music --socket .run/zero-music.sock
+```
+
+未做：列表/滚动、Browse/Search/Detail/Lyrics/Queue/Settings/Plugins/Sign-in
+页面、封面图片帧、文本输入。
+
 ## 下一步
 
-1. **M2 剩余**：`plugin.install/update/remove`、GitHub `owner/repo` 安装、
-   图片服务（fetch → RGB565 → 缓存）、`scan.progress`。
-2. **M3 UI**：`src/ipc/client.{h,cpp}`（JSON + 线程 + 重连）、状态
-   model/viewmodel、屏幕栈、Home / Now Playing、全局键位。
-3. **M4**：本地库 Browse/Search/Detail/Lyrics/Queue。
-4. **M5**：Plugins/Settings/Sign-in 页面。
-5. **M6**：CMake 集成 Go core、wrapper、`.desktop`、`.deb`、截图、文档。
+1. **M4**：本地库 Browse/Search/Detail/Lyrics/Queue（列表组件、焦点、
+   滚动、文本输入）。
+2. **M5**：Plugins/Settings/Sign-in 页面与插件安装。
+3. **M2 剩余**：`plugin.install/update/remove`、GitHub 安装、图片服务、
+   `scan.progress`。
+4. **M6**：CMake 集成 Go core、`zero-music-ui` 命名、wrapper、`.desktop`、
+   `.deb`、截图、文档。
 
 ## 开发命令
 
