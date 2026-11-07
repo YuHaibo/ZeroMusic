@@ -15,19 +15,17 @@ import (
 func (a *App) loadPlugins() {
 	plugin.SetAppVersion(Version)
 	plugin.SetOpenURL(openInBrowser)
-	for _, p := range a.plugins {
-		p.Close()
-	}
-	a.plugins = nil
-	a.pluginsByID = map[string]*plugin.Plugin{}
+	var loaded []*plugin.Plugin
+	byID := map[string]*plugin.Plugin{}
 	for _, p := range plugin.Discover(a.dirs.PluginsDir(), a.dirs.PluginDataDir()) {
 		id := p.Info().ID
-		if id == "" || id == "local" || a.pluginsByID[id] != nil {
+		if id == "" || id == "local" || byID[id] != nil {
 			a.log.Printf("plugin: ignoring one with id %q", id)
+			p.Close()
 			continue
 		}
-		a.plugins = append(a.plugins, p)
-		a.pluginsByID[id] = p
+		loaded = append(loaded, p)
+		byID[id] = p
 		p.OnSignInPrompt(func(prompt music.SignInPrompt) {
 			a.publishEvent("plugin.prompt", map[string]any{
 				"plugin": id,
@@ -36,6 +34,13 @@ func (a *App) loadPlugins() {
 			})
 		})
 		a.log.Printf("plugin: loaded %s %s", id, p.Info().Version)
+	}
+	a.srcMu.Lock()
+	old := a.plugins
+	a.plugins, a.pluginsByID = loaded, byID
+	a.srcMu.Unlock()
+	for _, p := range old {
+		p.Close()
 	}
 }
 
@@ -49,13 +54,18 @@ func openInBrowser(address string) error {
 
 // pluginEnabled reports whether the listener left the source on.
 func (a *App) pluginEnabled(id string) bool {
+	a.settingsMu.RLock()
+	defer a.settingsMu.RUnlock()
 	return !slices.Contains(a.settings.DisabledSources, id)
 }
 
 // pluginsInfo is what plugins.list shows.
 func (a *App) pluginsInfo() []map[string]any {
-	out := make([]map[string]any, 0, len(a.plugins))
-	for _, p := range a.plugins {
+	a.srcMu.RLock()
+	plugins := append([]*plugin.Plugin(nil), a.plugins...)
+	a.srcMu.RUnlock()
+	out := make([]map[string]any, 0, len(plugins))
+	for _, p := range plugins {
 		info := p.Info()
 		enabled := a.pluginEnabled(info.ID)
 		out = append(out, map[string]any{
@@ -85,6 +95,7 @@ func (a *App) setSourceEnabled(id string, on bool) error {
 		}
 		return fmt.Errorf("no such source: %s", id)
 	}
+	a.settingsMu.Lock()
 	disabled := slices.Clone(a.settings.DisabledSources)
 	if on {
 		disabled = slices.DeleteFunc(disabled, func(s string) bool { return s == id })
@@ -93,6 +104,7 @@ func (a *App) setSourceEnabled(id string, on bool) error {
 		p.Close()
 	}
 	a.settings.DisabledSources = uniqueStrings(disabled)
+	a.settingsMu.Unlock()
 	if err := a.settings.Save(a.settingsPath); err != nil {
 		return err
 	}
@@ -100,7 +112,15 @@ func (a *App) setSourceEnabled(id string, on bool) error {
 	return nil
 }
 
-func (a *App) pluginMap() map[string]*plugin.Plugin { return a.pluginsByID }
+func (a *App) pluginMap() map[string]*plugin.Plugin {
+	a.srcMu.RLock()
+	defer a.srcMu.RUnlock()
+	out := make(map[string]*plugin.Plugin, len(a.pluginsByID))
+	for id, p := range a.pluginsByID {
+		out[id] = p
+	}
+	return out
+}
 
 // installPlugin downloads a GitHub repository's latest release in the
 // background, then reloads the sources on the loop.
@@ -135,7 +155,7 @@ func (a *App) installPlugin(repo string) error {
 }
 
 func (a *App) updatePlugin(id string) error {
-	pl := a.pluginsByID[id]
+	pl := a.pluginMap()[id]
 	if pl == nil {
 		return fmt.Errorf("no such plugin: %s", id)
 	}
@@ -147,7 +167,7 @@ func (a *App) updatePlugin(id string) error {
 }
 
 func (a *App) removePlugin(id string) error {
-	pl := a.pluginsByID[id]
+	pl := a.pluginMap()[id]
 	if pl == nil {
 		return fmt.Errorf("no such plugin: %s", id)
 	}

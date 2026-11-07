@@ -40,6 +40,8 @@ type App struct {
 	pl          *player.Player
 	plugins     []*plugin.Plugin
 	pluginsByID map[string]*plugin.Plugin
+	srcMu       sync.RWMutex
+	settingsMu  sync.RWMutex
 	installMu   sync.Mutex
 
 	tasks chan task
@@ -250,6 +252,8 @@ func (a *App) sourceOf(id string) music.Source {
 	if id == "" || id == local.ID {
 		return a.local
 	}
+	a.srcMu.RLock()
+	defer a.srcMu.RUnlock()
 	if !a.pluginEnabled(id) {
 		return nil
 	}
@@ -279,6 +283,9 @@ var sourceMethods = []string{
 }
 
 func (a *App) sources() []sourceInfo {
+	a.srcMu.RLock()
+	plugins := append([]*plugin.Plugin(nil), a.plugins...)
+	a.srcMu.RUnlock()
 	list := []sourceInfo{{
 		ID:       local.ID,
 		Name:     a.local.Info().Name,
@@ -287,7 +294,7 @@ func (a *App) sources() []sourceInfo {
 		Can:      canList(a.local),
 		Enabled:  true,
 	}}
-	for _, p := range a.plugins {
+	for _, p := range plugins {
 		info := p.Info()
 		list = append(list, sourceInfo{
 			ID:       info.ID,

@@ -105,6 +105,14 @@ func (a *App) dispatch(method string, raw json.RawMessage) (any, error) {
 	case "quit":
 		time.AfterFunc(50*time.Millisecond, a.Quit)
 		return struct{}{}, nil
+	case "source.call", "plugin.setSetting", "plugin.signIn", "plugin.signOut", "plugin.account", "plugin.settings":
+		// Sources may take seconds, or wait for the listener to scan a code;
+		// keep that off the loop that answers the player.
+		result, err := a.sourceMethod(method, raw)
+		if err != nil {
+			return nil, rpcError(err)
+		}
+		return result, nil
 	}
 
 	var result any
@@ -402,6 +410,75 @@ func (a *App) onLoop(method string, raw json.RawMessage) (any, error) {
 	default:
 		return nil, ipc.Errorf(ipc.CodeUnsupported, "no such method: %s", method)
 	}
+}
+
+// sourceMethod runs what a source does off the core's loop, as music.Source
+// allows anything but Info and Can to take a while.
+func (a *App) sourceMethod(method string, raw json.RawMessage) (any, error) {
+	switch method {
+	case "source.call":
+		p, err := decodeParams[sourceCallParams](raw)
+		if err != nil {
+			return nil, err
+		}
+		src := a.sourceOf(p.Source)
+		if src == nil {
+			return nil, ipc.Errorf(ipc.CodeUnavailable, "no such source: %s", p.Source)
+		}
+		return sourceCall(src, p.Method, p.Params)
+	case "plugin.setSetting":
+		p, err := decodeParams[pluginSettingParams](raw)
+		if err != nil {
+			return nil, err
+		}
+		src := a.sourceOf(p.Source)
+		if src == nil {
+			return nil, ipc.Errorf(ipc.CodeUnavailable, "no such source: %s", p.Source)
+		}
+		return struct{}{}, src.SetSetting(p.Key, p.Value)
+	case "plugin.signIn":
+		p, err := decodeParams[idParams](raw)
+		if err != nil {
+			return nil, err
+		}
+		src := a.sourceOf(p.ID)
+		if src == nil {
+			return nil, ipc.Errorf(ipc.CodeUnavailable, "no such source: %s", p.ID)
+		}
+		acct, err := src.SignIn()
+		if err != nil {
+			return nil, err
+		}
+		a.publishEvent("sources.changed", a.sources())
+		return acct, nil
+	case "plugin.signOut":
+		p, err := decodeParams[idParams](raw)
+		if err != nil {
+			return nil, err
+		}
+		src := a.sourceOf(p.ID)
+		if src == nil {
+			return nil, ipc.Errorf(ipc.CodeUnavailable, "no such source: %s", p.ID)
+		}
+		if err := src.SignOut(); err != nil {
+			return nil, err
+		}
+		a.publishEvent("sources.changed", a.sources())
+		return struct{}{}, nil
+	case "plugin.account":
+		p, err := decodeParams[idParams](raw)
+		if err != nil {
+			return nil, err
+		}
+		src := a.sourceOf(p.ID)
+		if src == nil {
+			return nil, ipc.Errorf(ipc.CodeUnavailable, "no such source: %s", p.ID)
+		}
+		return src.Account()
+	case "plugin.settings":
+		return a.pluginSettings(raw)
+	}
+	return nil, ipc.Errorf(ipc.CodeUnsupported, "no such method: %s", method)
 }
 
 func (a *App) saveSettingsSoon() {
