@@ -125,6 +125,9 @@ cmake --build build/dev -j8
   （协议里图片用 base64 JSON，未走二进制帧；尺寸小，先这样。）
 - 截图更新为带封面的 Now Playing。
 
+- fbdev 不再硬编码 `/dev/fb0`：按 `LV_LINUX_FBDEV_DEVICE` /
+  `APP_FRAMEBUFFER_DEVICE`，否则扫 `/proc/fb` 找 `fb_st7789v`。
+- evdev 优先 `/dev/input/by-path/platform-3f804000.i2c-event`，再扫描。
 - 设备 evdev 键位补齐：字母、数字、空格、回车、退格、Tab、方向键与
   常用符号，支持 ASCII 搜索与插件设置输入。
 - Browse 增加 Songs/Albums/Artists/Playlists/Liked 入口；专辑、艺人、歌单列表
@@ -170,7 +173,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 已验证产物（2026-11-07）：
 
 - `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
-  `74d67abe667fd769804f6ec44008d8336afbf1018e18eca1e7b519f612242ca8`；
+  `66d7865cf02fec97fe237979d3d86fd8fb569ee7355dd1d7873afdc31f9236e4`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与

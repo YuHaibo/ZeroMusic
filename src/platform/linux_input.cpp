@@ -369,6 +369,14 @@ void discover_keypads(lv_display_t* display) {
         return;
     }
 
+    const char* panel_keyboard = "/dev/input/by-path/platform-3f804000.i2c-event";
+    if (access(panel_keyboard, R_OK) == 0) {
+        if (auto* indev = try_create_keypad(panel_keyboard)) {
+            lv_indev_set_display(indev, display);
+            return;
+        }
+    }
+
     auto* dir = opendir("/dev/input");
     if (!dir) {
         LV_LOG_WARN("failed to open /dev/input: %s", strerror(errno));

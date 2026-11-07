@@ -19,6 +19,7 @@
 
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <memory>
 #include <string>
 
@@ -35,7 +36,7 @@
 #endif
 
 #ifndef APP_FRAMEBUFFER_DEVICE
-#define APP_FRAMEBUFFER_DEVICE "/dev/fb0"
+#define APP_FRAMEBUFFER_DEVICE ""
 #endif
 
 #ifndef APP_DRM_DEVICE
@@ -240,6 +241,36 @@ private:
 };
 
 #if !USE_DESKTOP
+namespace {
+
+// framebuffer_path follows APP_FRAMEBUFFER_DEVICE or LV_LINUX_FBDEV_DEVICE, or
+// else looks in /proc/fb for the panel, rather than trusting fb0.
+std::string framebuffer_path() {
+    if (const char* env = std::getenv("LV_LINUX_FBDEV_DEVICE"); env && *env) {
+        return env;
+    }
+    if (const char* env = std::getenv("APP_FRAMEBUFFER_DEVICE"); env && *env) {
+        return env;
+    }
+    if (APP_FRAMEBUFFER_DEVICE[0] != '\0') {
+        return APP_FRAMEBUFFER_DEVICE;
+    }
+    std::ifstream fb("/proc/fb");
+    std::string line;
+    while (std::getline(fb, line)) {
+        if (line.find("st7789") == std::string::npos) {
+            continue;
+        }
+        const auto space = line.find(' ');
+        if (space != std::string::npos) {
+            return "/dev/fb" + line.substr(0, space);
+        }
+    }
+    return "/dev/fb0";
+}
+
+} // namespace
+
 lv_display_t* init_device_display() {
 #if APP_USE_DRM
     auto* display = lv_linux_drm_create();
@@ -260,7 +291,7 @@ lv_display_t* init_device_display() {
         return nullptr;
     }
 
-    if (lv_linux_fbdev_set_file(display, APP_FRAMEBUFFER_DEVICE) != LV_RESULT_OK) {
+    if (lv_linux_fbdev_set_file(display, framebuffer_path().c_str()) != LV_RESULT_OK) {
         lv_display_delete(display);
         return nullptr;
     }
