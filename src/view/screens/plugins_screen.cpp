@@ -59,7 +59,7 @@ void PluginsScreen::build_list() {
     auto* caption = assets().load_standard_font(10);
 
     title_ = lv_label_create(screen_content_);
-    lv_label_set_text(title_, searching_ ? ("Search: " + filter_ + "_").c_str() : "Plugins  (Q search)");
+    lv_label_set_text(title_, searching_ ? ("Search: " + filter_ + "_").c_str() : "Plugins  (TAB search)");
     lv_obj_set_style_text_font(title_, caption ? caption : &lv_font_montserrat_10, 0);
     lv_obj_align(title_, LV_ALIGN_TOP_LEFT, 10, 2);
     lv_obj_set_style_text_color(title_, searching_ ? colors.primary : colors.text_disabled, 0);
@@ -121,7 +121,7 @@ void PluginsScreen::build_list() {
 void PluginsScreen::refresh() {
     const auto colors = view::palette(view_model().is_dark_mode());
     if (title_) {
-        lv_label_set_text(title_, searching_ ? ("Search: " + filter_ + "_").c_str() : "Plugins  (Q search)");
+        lv_label_set_text(title_, searching_ ? ("Search: " + filter_ + "_").c_str() : "Plugins  (TAB search)");
         lv_obj_set_style_text_color(title_, searching_ ? colors.primary : colors.text_disabled, 0);
     }
     if (hint_) {

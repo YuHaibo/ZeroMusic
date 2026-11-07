@@ -12,12 +12,12 @@
     "screenshots": [
       "screenshot/zero-music-home.png",
       "screenshot/zero-music-now-playing.png",
-      "screenshot/zero-music-browse.png",
-      "screenshot/zero-music-search.png"
+      "screenshot/zero-music-plugins.png",
+      "screenshot/zero-music-install.png"
     ],
     "icon": "assets/images/zero-music.png",
-    "license": "AGPL-3.0",
-    "source_repo": "https://github.com/CardputerZero/Template",
+    "license": "AGPL-3.0-or-later",
+    "source_repo": "TODO",
     "author": {
       "display_name": "H.B. Yu"
     },
@@ -30,6 +30,13 @@
       "additional_hardware": false,
       "background_service": false,
       "external_display": false
+    },
+    "locales": {
+      "zh-CN": {
+        "summary": "本地音乐与流媒体插件播放器",
+        "description": "Zero Music 在 Cardputer Zero 上播放本地音乐和 MyGo Music 流媒体插件，采用为 320×170 屏幕设计的键盘优先 LVGL 界面。"
+      }
     }
-  }
+  },
+  "bin_name": "zero-music"
 }
