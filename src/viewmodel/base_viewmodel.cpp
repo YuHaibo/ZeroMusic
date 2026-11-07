@@ -103,7 +103,7 @@ BaseViewModel::BaseViewModel()
       track_album_subject_(""),
       position_text_subject_("0:00"),
       duration_text_subject_("0:00"),
-      status_subject_("Waiting for core…"),
+      status_subject_("Waiting for core..."),
       list_title_subject_("Songs"),
       list_revision_subject_(0),
       queue_revision_subject_(0),
@@ -462,6 +462,19 @@ void BaseViewModel::load_liked() {
     });
 }
 
+void BaseViewModel::load_recent() {
+    const std::string source = active_source_;
+    client_.call("source.call",
+                 ipc::Json{{"source", source}, {"method", "recent"}, {"params", ipc::Json::object()}},
+                 [this](const ipc::Json& result, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        apply_tracks(result.is_array() ? result : ipc::Json::array(), "Recent");
+    });
+}
+
 void BaseViewModel::open_collection_item(std::size_t index) {
     if (index >= collection_.size()) {
         return;
@@ -599,8 +612,8 @@ void BaseViewModel::cycle_source() {
 
 void BaseViewModel::rescan() {
     client_.call("library.rescan", ipc::Json::object());
-    status_subject_.set("Scanning…");
-    model_.set_status("Scanning…");
+    status_subject_.set("Scanning...");
+    model_.set_status("Scanning...");
 }
 
 void BaseViewModel::load_plugins() {
@@ -665,16 +678,16 @@ void BaseViewModel::install_plugin(const std::string& repo) {
     if (repo.empty()) {
         return;
     }
-    status_subject_.set("Installing…");
-    model_.set_status("Installing…");
+    status_subject_.set("Installing...");
+    model_.set_status("Installing...");
     client_.call("plugin.install", ipc::Json{{"repo", repo}},
                  [this](const ipc::Json&, const std::string& code, const std::string& message) {
         if (!code.empty()) {
             fail(code, message);
             return;
         }
-        status_subject_.set("Downloading plugin…");
-        model_.set_status("Downloading plugin…");
+        status_subject_.set("Downloading plugin...");
+        model_.set_status("Downloading plugin...");
     });
 }
 
@@ -683,7 +696,7 @@ void BaseViewModel::load_account(std::size_t index) {
         return;
     }
     account_plugin_id_ = plugins_[index].id;
-    account_subject_.set("Loading…");
+    account_subject_.set("Loading...");
     client_.call("plugin.account", ipc::Json{{"id", account_plugin_id_}},
                  [this](const ipc::Json& result, const std::string& code, const std::string& message) {
         if (!code.empty()) {
@@ -766,7 +779,7 @@ void BaseViewModel::sign_in_plugin(std::size_t index) {
     }
     const std::string id = plugins_[index].id;
     prompt_qr_subject_.set("");
-    prompt_text_subject_.set("Waiting for the code…");
+    prompt_text_subject_.set("Waiting for the code...");
     show_page(model::AppPage::SignIn);
     client_.call("plugin.signIn", ipc::Json{{"id", id}},
                  [this, id](const ipc::Json&, const std::string& code, const std::string& message) {
@@ -879,7 +892,7 @@ void BaseViewModel::on_event(const std::string& name, const ipc::Json& data) {
             fail("unavailable", data.value("error", "install failed"));
         }
         else {
-            status_subject_.set("Downloading plugin…");
+            status_subject_.set("Downloading plugin...");
         }
     }
     else if (name == "plugin.prompt") {

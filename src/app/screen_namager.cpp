@@ -16,6 +16,7 @@
 #include "now_playing_screen.h"
 #include "plugins_screen.h"
 #include "queue_screen.h"
+#include "recent_screen.h"
 #include "settings_screen.h"
 #include "search_screen.h"
 #include "signin_screen.h"
@@ -153,6 +154,9 @@ void ScreenManager::flush_requested_page() {
             break;
         case model::AppPage::Account:
             load_screen(std::make_unique<screen::AccountScreen>(view_model_, assets_), requested_page_);
+            break;
+        case model::AppPage::Recent:
+            load_screen(std::make_unique<screen::RecentScreen>(view_model_, assets_), requested_page_);
             break;
         default: {
             const auto text = placeholder_for(requested_page_);

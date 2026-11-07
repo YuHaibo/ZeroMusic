@@ -161,6 +161,7 @@ public:
     void browse(const std::string& page = "songs");
     void load_collection(CollectionKind kind);
     void load_liked();
+    void load_recent();
     void open_collection_item(std::size_t index);
     const std::vector<CollectionItem>& collection() const { return collection_; }
     lv_subject_t* collection_revision_subject();

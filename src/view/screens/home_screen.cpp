@@ -20,8 +20,9 @@ struct Entry {
     model::AppPage page;
 };
 
-constexpr std::array<Entry, 6> kEntries = {{
+constexpr std::array<Entry, 7> kEntries = {{
     {"Now Playing", model::AppPage::NowPlaying},
+    {"Recent", model::AppPage::Recent},
     {"Browse", model::AppPage::Browse},
     {"Search", model::AppPage::Search},
     {"Settings", model::AppPage::Settings},
@@ -73,16 +74,16 @@ void HomeScreen::build_content(lv_obj_t* content) {
     lv_obj_remove_style_all(menu);
     lv_obj_set_size(menu, 180, LV_PCT(100));
     lv_obj_align(menu, LV_ALIGN_RIGHT_MID, 0, 0);
-    lv_obj_set_style_pad_all(menu, 7, 0);
+    lv_obj_set_style_pad_all(menu, 5, 0);
     lv_obj_set_style_pad_left(menu, 4, 0);
     lv_obj_set_flex_flow(menu, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_row(menu, 2, 0);
+    lv_obj_set_style_pad_row(menu, 1, 0);
     lv_obj_clear_flag(menu, LV_OBJ_FLAG_SCROLLABLE);
 
     for (const auto& entry : kEntries) {
         auto* row = lv_obj_create(menu);
         lv_obj_remove_style_all(row);
-        lv_obj_set_size(row, LV_PCT(100), 20);
+        lv_obj_set_size(row, LV_PCT(100), 18);
         lv_obj_set_style_radius(row, 3, 0);
         lv_obj_set_style_pad_left(row, 6, 0);
         lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
