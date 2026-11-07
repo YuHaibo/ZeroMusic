@@ -444,7 +444,7 @@ By default, the debian package is copied to '$HOME' folder, normally it's under 
 On your device, install the copied package with `apt` and replace the package file name with the one you copied:
 
 ```shell
-sudo apt install --no-install-recommends ./Zero Music_0.2.1_rev1_arm64.deb
+sudo apt install --no-install-recommends ./zero-music_1.0.0_rev1_arm64.deb
 ```
 
 
@@ -520,7 +520,7 @@ Debian packages are produced with CPack and written to `dist/`. The package file
 Default example:
 
 ```text
-dist/Zero Music_0.2.1_rev1_arm64.deb
+dist/zero-music_1.0.0_rev1_arm64.deb
 ```
 
 Package layout:

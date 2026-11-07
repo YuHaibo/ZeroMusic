@@ -7,9 +7,9 @@ Portal: <https://dev.cardputer.cc/#/upload>
 
 ## Package
 
-- Debian package path: `dist/zero-music_0.2.1_rev1_arm64.deb`
+- Debian package path: `dist/zero-music_1.0.0_rev1_arm64.deb`
 - Package: `zero-music`
-- Version: `0.2.1-rev1`
+- Version: `1.0.0-rev1`
 - Architecture: `arm64`
 - Maintainer: `H.B. Yu <mail@yuhaibo.com>`
 - APPLaunch desktop path: `usr/share/APPLaunch/applications/zero-music.desktop`
@@ -17,13 +17,14 @@ Portal: <https://dev.cardputer.cc/#/upload>
 
 ## Source and Ownership
 
-- Public source repository: TODO
-- Expected GitHub uploader/owner: TODO
+- Public source repository: https://github.com/YuHaibo/ZeroMusic
+- Expected GitHub uploader/owner: YuHaibo
 - Hide uploader email: `true`
 
 ## Listing
 
 - Application name: `Zero Music`
+- Share code: `ZMUS`
 - One-line summary (maximum 80 characters): `Local music and streaming services, plugin-powered.`
 - Description: `Zero Music plays local files and, with third-party MyGo Music-compatible plugins, streaming sources on Cardputer Zero. It ships no music catalogue or service credentials. The keyboard-first LVGL interface is built for the 320x170 screen.`
 - Categories (maximum 6): `Media`

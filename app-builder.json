@@ -1,7 +1,7 @@
 {
   "app_name": "Zero Music",
   "package_name": "zero-music",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "description": "A Cardputer Zero music player with MyGo Music plugin support",
   "store": {
     "summary": "Local music and streaming services, plugin-powered.",
@@ -17,11 +17,12 @@
     ],
     "icon": "assets/images/zero-music.png",
     "license": "AGPL-3.0-only",
-    "source_repo": "TODO",
+    "source_repo": "https://github.com/YuHaibo/ZeroMusic",
     "author": {
+      "github": "YuHaibo",
       "display_name": "H.B. Yu"
     },
-    "share_code": "TODO",
+    "share_code": "ZMUS",
     "permissions": {
       "camera": false,
       "microphone": false,
