@@ -157,7 +157,17 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 已验证 Go core 的 `GOOS=linux GOARCH=arm64` 交叉编译（`scripts/build-core.sh`）。
 容器交叉构建：`packaging/cross/Dockerfile` + `packaging/cross/build.sh`
 在 arm64 Ubuntu 容器内装 `aarch64-linux-gnu-gcc`、CMake 3.31、Go 1.27.3，
-然后跑 `cp0-cross-package`。仍需网络下载 BSP 与 LVGL。
+然后跑 `cp0-cross-package`。
+
+已验证产物（2026-11-07）：
+
+- `dist/zero-music_0.2.1_rev1_arm64.deb`，7.6 MB；
+- `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
+- 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
+  `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与
+  图标、字体/音频资源、`LICENSE`/`NOTICE`；
+- 依赖含 `libpulse0 | libasound2`、`ca-certificates`、`fonts-noto-cjk`；
+- manifest + package 校验脚本通过。
 
 ## 下一步
 

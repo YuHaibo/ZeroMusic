@@ -11,7 +11,7 @@ set(APP_DEBIAN_REVISION "rev1" CACHE STRING "Debian package revision/vendor suff
 set(APP_DEBIAN_ARCHITECTURE "arm64" CACHE STRING "Debian package architecture")
 # Deliberately a placeholder: the store rejects packages whose Maintainer is
 # still a template/M5Stack identity, so set your own name and email here.
-set(APP_MAINTAINER "TODO Your Name <todo@example.invalid>" CACHE STRING "Debian package maintainer")
+set(APP_MAINTAINER "H.B. Yu <mail@yuhaibo.com>" CACHE STRING "Debian package maintainer")
 set(APP_PACKAGE_DESCRIPTION "Cardputer Zero music player with MyGo Music plugins" CACHE STRING "Debian package summary")
 set(APP_INSTALL_SYSTEMD_SERVICE OFF CACHE BOOL "Install a systemd service file for embedded deployments")
 
@@ -76,7 +76,10 @@ if(APP_INSTALL_SYSTEMD_SERVICE)
     )
 endif()
 
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/README.md"
+install(FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/README.md"
+    "${CMAKE_CURRENT_SOURCE_DIR}/NOTICE"
+    "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE"
     DESTINATION "${CMAKE_INSTALL_DOCDIR}"
 )
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/LICENSE.txt"

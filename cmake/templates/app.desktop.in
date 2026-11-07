@@ -5,5 +5,5 @@ Comment=@APP_PACKAGE_DESCRIPTION@
 Exec=/usr/bin/@PROJECT_NAME@
 Icon=share/images/zero-music.png
 Terminal=false
-Categories=Utility;
+Categories=AudioVideo;Audio;Player;
 StartupNotify=false
