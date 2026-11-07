@@ -334,22 +334,56 @@ void BaseViewModel::browse(const std::string& page) {
 }
 
 void BaseViewModel::search(const std::string& query) {
+    search(query, CollectionKind::Tracks);
+}
+
+void BaseViewModel::search(const std::string& query, CollectionKind kind) {
     if (query.empty()) {
         apply_tracks(ipc::Json::array(), "Search");
         return;
     }
     const std::string source = active_source_;
+    const char* kind_name = kind == CollectionKind::Albums ? "albums"
+                            : kind == CollectionKind::Artists ? "artists"
+                            : kind == CollectionKind::Playlists ? "playlists"
+                                                               : "tracks";
     client_.call("source.call",
                  ipc::Json{{"source", source},
                            {"method", "search"},
-                           {"params", ipc::Json{{"query", query}, {"kind", "tracks"}, {"offset", 0}}}},
-                  [this, query](const ipc::Json& result, const std::string& code, const std::string& message) {
+                           {"params", ipc::Json{{"query", query}, {"kind", kind_name}, {"offset", 0}}}},
+                 [this, kind, kind_name, query](const ipc::Json& result, const std::string& code, const std::string& message) {
         if (!code.empty()) {
             fail(code, message);
             return;
         }
-        apply_tracks(result.contains("tracks") ? result["tracks"] : ipc::Json::array(),
-                     "Results: " + query);
+        if (kind == CollectionKind::Tracks) {
+            apply_tracks(result.contains("tracks") ? result["tracks"] : ipc::Json::array(),
+                         "Results: " + query);
+            return;
+        }
+        collection_kind_ = kind;
+        std::vector<CollectionItem> items;
+        if (result.contains(kind_name) && result[kind_name].is_array()) {
+            for (const auto& entry : result[kind_name]) {
+                CollectionItem item;
+                item.id = entry.value("id", "");
+                item.title = entry.value("name", "");
+                if (kind == CollectionKind::Albums) {
+                    item.subtitle = join_artists(entry);
+                }
+                else if (kind == CollectionKind::Playlists) {
+                    const int count = entry.value("trackCount", 0);
+                    if (count > 0) {
+                        item.subtitle = std::to_string(count) + " songs";
+                    }
+                }
+                items.push_back(std::move(item));
+            }
+        }
+        collection_ = std::move(items);
+        list_title_ = std::string("Results: ") + query + " - " + kind_name;
+        list_title_subject_.set(list_title_.c_str());
+        collection_revision_subject_.set(collection_revision_subject_.value() + 1);
     });
 }
 
@@ -438,14 +472,14 @@ void BaseViewModel::open_collection_item(std::size_t index) {
                                                            : "playlist";
     client_.call("source.call",
                  ipc::Json{{"source", source}, {"method", method}, {"params", ipc::Json{{"id", id}}}},
-                 [this, kind, id](const ipc::Json& result, const std::string& code, const std::string& message) {
+                 [this, kind](const ipc::Json& result, const std::string& code, const std::string& message) {
         if (!code.empty()) {
             fail(code, message);
             return;
         }
         std::string title;
         if (kind == CollectionKind::Albums) {
-            const auto& album = result["album"];
+            const auto album = result.contains("album") ? result["album"] : ipc::Json::object();
             title = album.value("name", "Album");
             const std::string artists = join_artists(album);
             if (!artists.empty()) {
@@ -453,15 +487,14 @@ void BaseViewModel::open_collection_item(std::size_t index) {
             }
         }
         else if (kind == CollectionKind::Artists) {
-            title = result["artist"].value("name", "Artist");
+            title = result.contains("artist") ? result["artist"].value("name", "Artist") : "Artist";
         }
         else {
             title = result.value("name", "Playlist");
         }
         std::vector<TrackItem> items;
-        const char* key = kind == CollectionKind::Artists ? "tracks" : "tracks";
-        if (result.contains(key) && result[key].is_array()) {
-            for (const auto& track : result[key]) {
+        if (result.contains("tracks") && result["tracks"].is_array()) {
+            for (const auto& track : result["tracks"]) {
                 items.push_back(parse_track(track, active_source_));
             }
         }

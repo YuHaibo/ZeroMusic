@@ -35,6 +35,7 @@ enum class CollectionKind {
     Albums,
     Artists,
     Playlists,
+    Tracks,
 };
 
 // CollectionItem is an album, artist or playlist row.
@@ -163,6 +164,7 @@ public:
     lv_subject_t* collection_revision_subject();
     lv_subject_t* sources_revision_subject();
     void search(const std::string& query);
+    void search(const std::string& query, CollectionKind kind);
     const std::vector<TrackItem>& tracks() const { return tracks_; }
     std::size_t track_count() const { return tracks_.size(); }
     const std::string& list_title() const { return list_title_; }

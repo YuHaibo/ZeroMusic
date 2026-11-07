@@ -93,8 +93,9 @@ cmake --build build/dev -j8
 - 新增 `src/view/widgets/track_list`：6 行焦点列表、上下移动、Enter 播放、
   滚动窗口、时长显示。
 - Browse 页读取当前源的 `browse "songs"`，支持本地库与插件源。
-- Search 页支持 ASCII 输入、Backspace、Enter 查询；结果用同一列表，
-  Enter 播放整张结果队列并从选中项开始。
+- Search 页支持 ASCII 输入、Backspace、Enter 查询；Tab 在
+  tracks/albums/artists/playlists 间切换；tracks 结果用列表播放，
+  集合结果 Enter 打开详情。
 - 截图：[Browse](../screenshot/zero-music-browse.png) /
   [Search](../screenshot/zero-music-search.png)。
 
@@ -121,6 +122,8 @@ cmake --build build/dev -j8
   （协议里图片用 base64 JSON，未走二进制帧；尺寸小，先这样。）
 - 截图更新为带封面的 Now Playing。
 
+- 设备 evdev 键位补齐：字母、数字、空格、回车、退格、Tab、方向键与
+  常用符号，支持 ASCII 搜索与插件设置输入。
 - Browse 增加 Songs/Albums/Artists/Playlists/Liked 入口；专辑、艺人、歌单列表
   通过 `browse albums|artists|playlists` 与 `album|artist|playlist` 拉取。
 - Liked 页读取 `liked`，Enter 播放。
@@ -163,7 +166,8 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 
 已验证产物（2026-11-07）：
 
-- `dist/zero-music_0.2.1_rev1_arm64.deb`，7.6 MB；
+- `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
+  `b7b1cc2849989696d4b985cb1267133bdc19a9208f2fa4ade6f14753e7781dbe`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与
