@@ -155,7 +155,9 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
   正常，core 收到信号后删除 socket。
 
 已验证 Go core 的 `GOOS=linux GOARCH=arm64` 交叉编译（`scripts/build-core.sh`）。
-未验证：`cp0-cross` 的 C++/LVGL 交叉构建与 `.deb`（需要 BSP SDK）。
+容器交叉构建：`packaging/cross/Dockerfile` + `packaging/cross/build.sh`
+在 arm64 Ubuntu 容器内装 `aarch64-linux-gnu-gcc`、CMake 3.31、Go 1.27.3，
+然后跑 `cp0-cross-package`。仍需网络下载 BSP 与 LVGL。
 
 ## 下一步
 
