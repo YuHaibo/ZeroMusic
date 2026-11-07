@@ -31,14 +31,6 @@
   <img src="https://img.shields.io/badge/Raspberry%20Pi-A22846?style=flat-square&logo=raspberrypi&logoColor=white" alt="Raspberry Pi" />
 </p>
 
-<p align="center">
-  <a href="https://discord.gg/ysQAWBUE9Q">
-    <img
-      src="https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=flat-square&logo=discord&logoColor=white"
-      alt="Join Discord"
-    />
-  </a>
-</p>
 Zero Music is two processes: a Go core (library, player, plugins, settings) and a C++/LVGL UI that talks to it over a Unix-socket JSON-RPC protocol. Desktop builds use an SDL simulator; the device builds against Linux fbdev/evdev.
 
 ## Music sources and plugins
