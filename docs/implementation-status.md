@@ -108,7 +108,9 @@ cmake --build build/dev -j8
 - Settings 页可调音量、源、音质、缓存、语言，并触发重扫。
 - Plugins 页列出插件、Enter 启停、`G` 授权 process、`S` 登录、
   `E` 打开插件设置；设置值用 ASCII 键盘编辑，Enter 保存。
-- Plugins 页 `I` 打开 GitHub 安装输入页，`A` 打开账户页（`X` 退出登录）。
+- Plugins 页 `I` 打开安装页：默认列出 GitHub 话题
+  `mygo-music-plugin` 的公开仓库（`plugin.available`），上下选择、Enter
+  安装；`T` 可手动输入 `owner/repo`，`A` 打开账户页（`X` 退出登录）。
 - Sign-in 页用 LVGL 内置 QRCode 渲染 `plugin.prompt.qr`，文本来自
   `plugin.prompt.text`。
 - core 新增 `player.remove`，以及 `plugin.install` / `update` / `remove`
@@ -128,6 +130,8 @@ cmake --build build/dev -j8
 - fbdev 不再硬编码 `/dev/fb0`：按 `LV_LINUX_FBDEV_DEVICE` /
   `APP_FRAMEBUFFER_DEVICE`，否则扫 `/proc/fb` 找 `fb_st7789v`。
 - evdev 优先 `/dev/input/by-path/platform-3f804000.i2c-event`，再扫描。
+- 安装页的 `/` 可用（含小键盘 `/`，手动输入也把 `\` 当 `/`）；推荐直接用
+  话题列表，免去输入。
 - `F/Z/X/C` 默认映射为上下左右；搜索框、安装输入框、插件设置编辑态
   自动切回文本输入，方向键仍可用。
 - 设备 evdev 键位补齐：字母、数字、空格、回车、退格、Tab、方向键与
@@ -175,7 +179,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 已验证产物（2026-11-07）：
 
 - `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
-  `ea2286f6fb5f31a448f0d192d3af823a1285562979b164a57c5c9bdaf4037e02`；
+  `d6660e4361c8ba12ed6b26805d3ad7bada6dd01cbb124c5d47a21b3c9870f19a`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与

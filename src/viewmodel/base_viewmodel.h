@@ -45,6 +45,13 @@ struct CollectionItem {
     std::string subtitle;
 };
 
+// AvailablePlugin is one repository with the mygo-music-plugin topic.
+struct AvailablePlugin {
+    std::string repo;
+    std::string name;
+    std::string description;
+};
+
 // PluginSetting is one value a plugin asks the listener for.
 struct PluginSetting {
     std::string key;
@@ -140,6 +147,9 @@ public:
     void grant_plugin(std::size_t index, bool on);
     void sign_in_plugin(std::size_t index);
     void install_plugin(const std::string& repo);
+    void load_available_plugins();
+    const std::vector<AvailablePlugin>& available_plugins() const { return available_plugins_; }
+    lv_subject_t* available_plugins_revision_subject();
     void load_account(std::size_t index);
     void sign_out_account();
     lv_subject_t* account_subject();
@@ -228,6 +238,7 @@ private:
     std::string current_track_id_;
     bool liked_ = false;
     std::vector<PluginItem> plugins_;
+    std::vector<AvailablePlugin> available_plugins_;
     std::vector<PluginSetting> plugin_settings_;
     std::string plugin_settings_id_;
     std::string account_plugin_id_;
@@ -256,6 +267,7 @@ private:
     reactive::StringSubject<32> language_subject_;
     reactive::IntSubject plugins_revision_subject_;
     reactive::IntSubject plugin_settings_revision_subject_;
+    reactive::IntSubject available_plugins_revision_subject_;
     reactive::StringSubject<512> prompt_qr_subject_;
     reactive::StringSubject<256> prompt_text_subject_;
     reactive::StringSubject<96> account_subject_;

@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -212,6 +213,47 @@ func githubGet(path string, out any) (status int, err error) {
 		return res.StatusCode, errors.New("GitHub says to slow down; try again in a while")
 	}
 	return res.StatusCode, fmt.Errorf("GitHub answered %s", res.Status)
+}
+
+// RemotePlugin is one repository GitHub lists for the plugin topic.
+type RemotePlugin struct {
+	Repo        string `json:"repo"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Stars       int    `json:"stars"`
+	Updated     string `json:"updated"`
+}
+
+// SearchTopic lists public repositories with a GitHub topic, newest first.
+func SearchTopic(topic string) ([]RemotePlugin, error) {
+	var result struct {
+		Items []struct {
+			FullName        string `json:"full_name"`
+			Name            string `json:"name"`
+			Description     string `json:"description"`
+			StargazersCount int    `json:"stargazers_count"`
+			UpdatedAt       string `json:"updated_at"`
+		} `json:"items"`
+	}
+	path := "/search/repositories?q=topic:" + url.QueryEscape(topic) + "&sort=updated&per_page=50"
+	status, err := githubGet(path, &result)
+	if err != nil {
+		return nil, err
+	}
+	if status != http.StatusOK {
+		return nil, fmt.Errorf("GitHub search answered %d", status)
+	}
+	plugins := make([]RemotePlugin, 0, len(result.Items))
+	for _, item := range result.Items {
+		plugins = append(plugins, RemotePlugin{
+			Repo:        item.FullName,
+			Name:        item.Name,
+			Description: item.Description,
+			Stars:       item.StargazersCount,
+			Updated:     item.UpdatedAt,
+		})
+	}
+	return plugins, nil
 }
 
 // Latest finds what a repository offers now.

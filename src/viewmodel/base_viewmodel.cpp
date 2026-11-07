@@ -114,6 +114,7 @@ BaseViewModel::BaseViewModel()
       language_subject_("System"),
       plugins_revision_subject_(0),
       plugin_settings_revision_subject_(0),
+      available_plugins_revision_subject_(0),
       prompt_qr_subject_(""),
       prompt_text_subject_("Start sign-in from Plugins"),
       account_subject_("Not signed in"),
@@ -222,6 +223,7 @@ lv_subject_t* BaseViewModel::cache_subject() { return cache_subject_.native(); }
 lv_subject_t* BaseViewModel::language_subject() { return language_subject_.native(); }
 lv_subject_t* BaseViewModel::plugins_revision_subject() { return plugins_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::plugin_settings_revision_subject() { return plugin_settings_revision_subject_.native(); }
+lv_subject_t* BaseViewModel::available_plugins_revision_subject() { return available_plugins_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::prompt_qr_subject() { return prompt_qr_subject_.native(); }
 lv_subject_t* BaseViewModel::prompt_text_subject() { return prompt_text_subject_.native(); }
 lv_subject_t* BaseViewModel::account_subject() { return account_subject_.native(); }
@@ -671,6 +673,28 @@ void BaseViewModel::grant_plugin(std::size_t index, bool on) {
             fail(code, message);
         }
         load_plugins();
+    });
+}
+
+void BaseViewModel::load_available_plugins() {
+    client_.call("plugin.available", ipc::Json::object(),
+                 [this](const ipc::Json& result, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        std::vector<AvailablePlugin> plugins;
+        if (result.is_array()) {
+            for (const auto& entry : result) {
+                AvailablePlugin plugin;
+                plugin.repo = entry.value("repo", "");
+                plugin.name = entry.value("name", plugin.repo);
+                plugin.description = entry.value("description", "");
+                plugins.push_back(std::move(plugin));
+            }
+        }
+        available_plugins_ = std::move(plugins);
+        available_plugins_revision_subject_.set(available_plugins_revision_subject_.value() + 1);
     });
 }
 

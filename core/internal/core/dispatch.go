@@ -7,6 +7,7 @@ import (
 
 	"zeromusic/core/internal/ipc"
 	"zeromusic/core/internal/music"
+	"zeromusic/core/internal/plugin"
 )
 
 type helloParams struct {
@@ -105,6 +106,12 @@ func (a *App) dispatch(method string, raw json.RawMessage) (any, error) {
 	case "quit":
 		time.AfterFunc(50*time.Millisecond, a.Quit)
 		return struct{}{}, nil
+	case "plugin.available":
+		plugins, err := plugin.SearchTopic("mygo-music-plugin")
+		if err != nil {
+			return nil, &ipc.Error{Code: ipc.CodeNetwork, Message: err.Error()}
+		}
+		return plugins, nil
 	case "image.get":
 		// Fetching a cover can take a while; it doesn't touch the player.
 		return a.imageGet(raw)

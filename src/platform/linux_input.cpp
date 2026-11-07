@@ -248,7 +248,9 @@ uint32_t map_evdev_key(uint16_t code) {
         case KEY_APOSTROPHE: return '\'';
         case KEY_COMMA: return ',';
         case KEY_DOT: return '.';
-        case KEY_SLASH: return '/';
+        case KEY_SLASH:
+        case KEY_KPSLASH:
+            return '/';
         case KEY_GRAVE: return '`';
         case KEY_SYSRQ:
             return kKeyPrintScreen;
