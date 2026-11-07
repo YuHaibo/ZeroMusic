@@ -10,6 +10,7 @@
 #include "bindings.h"
 #include "theme.h"
 
+#include <algorithm>
 #include <array>
 
 namespace screen {
@@ -33,6 +34,7 @@ constexpr std::array<Entry, 7> kEntries = {{
 } // namespace
 
 void HomeScreen::build_content(lv_obj_t* content) {
+    selected_ = std::clamp(view_model().page_selection(model::AppPage::Home), 0, static_cast<int>(kEntries.size()) - 1);
     const auto colors = view::palette(view_model().is_dark_mode());
     auto* small = assets().load_standard_font(10);
 
@@ -104,10 +106,12 @@ bool HomeScreen::handle_key(std::uint32_t key, bool long_pressed) {
     switch (key) {
         case LV_KEY_UP:
             selected_ = (selected_ + static_cast<int>(rows_.size()) - 1) % static_cast<int>(rows_.size());
+            view_model().set_page_selection(model::AppPage::Home, selected_);
             refresh_selection();
             return true;
         case LV_KEY_DOWN:
             selected_ = (selected_ + 1) % static_cast<int>(rows_.size());
+            view_model().set_page_selection(model::AppPage::Home, selected_);
             refresh_selection();
             return true;
         case LV_KEY_ENTER:

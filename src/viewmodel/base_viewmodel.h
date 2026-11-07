@@ -12,6 +12,7 @@
 
 #include "lvgl.h"
 
+#include <array>
 #include <string>
 #include <utility>
 #include <vector>
@@ -69,6 +70,7 @@ struct PluginItem {
     bool process = false;
     bool login = false;
     bool preset = false;
+    bool signedIn = false;
 };
 
 // LyricItem is a timed line, as the core parsed it.
@@ -135,6 +137,11 @@ public:
     void cycle_cache();
     void cycle_language();
     void rescan();
+    void load_folders();
+    void add_music_folder();
+    void remove_folder(std::size_t index);
+    const std::vector<std::string>& folders() const { return folders_; }
+    lv_subject_t* folders_subject();
     void cycle_source();
 
     void load_cover(const std::string& url, int size = 120);
@@ -145,6 +152,10 @@ public:
 
     const std::vector<PluginItem>& plugins() const { return plugins_; }
     const std::string& active_source_id() const { return active_source_; }
+
+    // page_selection keeps the row a page was on while another page shows.
+    int page_selection(model::AppPage page) const;
+    void set_page_selection(model::AppPage page, int row);
     void load_plugins();
     void set_plugin_enabled(std::size_t index, bool on);
     void use_plugin(std::size_t index);
@@ -159,6 +170,7 @@ public:
     lv_subject_t* account_subject();
     lv_subject_t* liked_subject();
     void remove_plugin(std::size_t index);
+    void sign_out_plugin(std::size_t index);
     void load_plugin_settings(std::size_t index);
     void save_plugin_setting(std::size_t index, const std::string& value);
     const std::vector<PluginSetting>& plugin_settings() const { return plugin_settings_; }
@@ -227,8 +239,10 @@ private:
     ipc::Client client_;
     std::vector<model::AppPage> stack_;
     std::string active_source_ = "local";
+    std::array<int, 16> page_selection_{};
     std::string preferred_source_;
     std::vector<std::pair<std::string, std::string>> sources_;
+    std::vector<std::string> folders_;
     std::int64_t position_ms_ = 0;
     int volume_ = 80;
     int repeat_ = 0;
@@ -252,6 +266,7 @@ private:
     std::vector<PluginSetting> plugin_settings_;
     std::string plugin_settings_id_;
     std::string account_plugin_id_;
+    std::string prompt_plugin_;
     std::vector<CollectionItem> collection_;
     CollectionKind collection_kind_ = CollectionKind::Albums;
     std::vector<std::uint8_t> cover_data_;
@@ -276,11 +291,12 @@ private:
     reactive::StringSubject<32> normalize_subject_;
     reactive::StringSubject<32> cache_subject_;
     reactive::StringSubject<96> list_status_subject_;
+    reactive::StringSubject<32> folders_subject_;
     reactive::StringSubject<32> language_subject_;
     reactive::IntSubject plugins_revision_subject_;
     reactive::IntSubject plugin_settings_revision_subject_;
     reactive::IntSubject available_plugins_revision_subject_;
-    reactive::StringSubject<512> prompt_qr_subject_;
+    reactive::StringSubject<2048> prompt_qr_subject_;
     reactive::StringSubject<256> prompt_text_subject_;
     reactive::StringSubject<96> account_subject_;
     reactive::BoolSubject liked_subject_;

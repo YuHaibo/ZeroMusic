@@ -179,10 +179,10 @@ bool NowPlayingScreen::handle_key(std::uint32_t key, bool long_pressed) {
     }
     switch (key) {
         case LV_KEY_LEFT:
-            view_model().seek_relative(-5000);
+            view_model().seek_relative(-10000);
             return true;
         case LV_KEY_RIGHT:
-            view_model().seek_relative(5000);
+            view_model().seek_relative(10000);
             return true;
         case LV_KEY_UP:
             view_model().volume_delta(5);

@@ -52,6 +52,7 @@ void PluginsScreen::build_content(lv_obj_t* content) {
 
 void PluginsScreen::build_list() {
     mode_ = Mode::List;
+    selected_ = std::max(0, view_model().page_selection(model::AppPage::Plugins));
     lv_obj_clean(screen_content_);
     const auto colors = view::palette(view_model().is_dark_mode());
     auto* body = assets().load_standard_font(12);
@@ -64,7 +65,8 @@ void PluginsScreen::build_list() {
     lv_obj_set_style_text_color(title_, searching_ ? colors.primary : colors.text_disabled, 0);
 
     status_ = lv_label_create(screen_content_);
-    lv_obj_set_width(status_, 130);
+    lv_obj_set_width(status_, 200);
+    lv_obj_set_height(status_, 12);
     lv_obj_set_style_text_align(status_, LV_TEXT_ALIGN_RIGHT, 0);
     lv_label_set_long_mode(status_, LV_LABEL_LONG_DOT);
     lv_obj_set_style_text_font(status_, caption ? caption : &lv_font_montserrat_10, 0);
@@ -103,7 +105,7 @@ void PluginsScreen::build_list() {
     lv_obj_set_style_text_color(empty_, colors.text_disabled, 0);
 
     hint_ = lv_label_create(screen_content_);
-    lv_label_set_text(hint_, "ENTER use  D delete  S sign in  E set  I install");
+    lv_label_set_text(hint_, "ENTER use  D del  S in  O out  P set  I add");
     lv_obj_set_style_text_font(hint_, caption ? caption : &lv_font_montserrat_10, 0);
     lv_label_set_long_mode(hint_, LV_LABEL_LONG_CLIP);
     lv_obj_set_width(hint_, 300);
@@ -124,7 +126,7 @@ void PluginsScreen::refresh() {
     }
     if (hint_) {
         lv_label_set_text(hint_, searching_ ? "Type to filter  ESC clear"
-                                            : "ENTER use  D delete  S sign in  E set  I install");
+                                            : "ENTER use  D del  S in  O out  P set  I add");
     }
     const auto& plugins = view_model().plugins();
     visible_.clear();
@@ -192,7 +194,7 @@ void PluginsScreen::refresh() {
             state = "Using";
         }
         else if (plugin.login) {
-            state = "Login *";
+            state = plugin.signedIn ? "Logged in" : "Login *";
         }
         lv_label_set_text(states_[i], state.c_str());
         const bool on = selected;
@@ -389,7 +391,7 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
         refresh();
         return true;
     }
-    if (key == 'q' || key == 'Q') {
+    if (key == LV_KEY_NEXT) {
         searching_ = true;
         filter_.clear();
         selected_ = 0;
@@ -416,10 +418,12 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
     switch (key) {
         case LV_KEY_UP:
             selected_ = (selected_ + count - 1) % count;
+            view_model().set_page_selection(model::AppPage::Plugins, selected_);
             refresh();
             return true;
         case LV_KEY_DOWN:
             selected_ = (selected_ + 1) % count;
+            view_model().set_page_selection(model::AppPage::Plugins, selected_);
             refresh();
             return true;
         case LV_KEY_ENTER:
@@ -443,6 +447,20 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
             }
             view_model().sign_in_plugin(original(selected_));
             return true;
+        case 'o':
+        case 'O': {
+            const auto& plugin = view_model().plugins()[original(selected_)];
+            if (plugin.preset || !plugin.login) {
+                lv_label_set_text(status_, "This source has no account");
+            }
+            else if (!plugin.signedIn) {
+                lv_label_set_text(status_, "Not signed in");
+            }
+            else {
+                view_model().sign_out_plugin(original(selected_));
+            }
+            return true;
+        }
         case 'd':
         case 'D': {
             const std::size_t index = original(selected_);
@@ -470,8 +488,8 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
             view_model().load_account(original(selected_));
             view_model().show_page(model::AppPage::Account);
             return true;
-        case 'e':
-        case 'E': {
+        case 'p':
+        case 'P': {
             if (view_model().plugins()[original(selected_)].preset) {
                 lv_label_set_text(status_, "Local Files has no settings");
                 return true;

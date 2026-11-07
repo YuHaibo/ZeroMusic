@@ -26,6 +26,7 @@ enum class AppPage {
     Install = 11,
     Account = 12,
     Recent = 13,
+    Folders = 14,
 };
 
 struct Track {

@@ -112,6 +112,7 @@ BaseViewModel::BaseViewModel()
       normalize_subject_("Off"),
       cache_subject_("3 GB"),
       list_status_subject_(""),
+      folders_subject_("0 folders"),
       language_subject_("System"),
       plugins_revision_subject_(0),
       plugin_settings_revision_subject_(0),
@@ -178,6 +179,11 @@ BaseViewModel::BaseViewModel()
             model_.set_current_page(model::AppPage::SignIn);
             current_page_subject_.set(page_to_int(model::AppPage::SignIn));
         }
+        else if (page == "folders") {
+            stack_ = {model::AppPage::Folders};
+            model_.set_current_page(model::AppPage::Folders);
+            current_page_subject_.set(page_to_int(model::AppPage::Folders));
+        }
         else if (page == "help") {
             stack_ = {model::AppPage::Help};
             model_.set_current_page(model::AppPage::Help);
@@ -222,6 +228,7 @@ lv_subject_t* BaseViewModel::status_subject() { return status_subject_.native();
 lv_subject_t* BaseViewModel::list_title_subject() { return list_title_subject_.native(); }
 lv_subject_t* BaseViewModel::list_revision_subject() { return list_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::list_status_subject() { return list_status_subject_.native(); }
+lv_subject_t* BaseViewModel::folders_subject() { return folders_subject_.native(); }
 lv_subject_t* BaseViewModel::queue_revision_subject() { return queue_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::lyrics_revision_subject() { return lyrics_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::quality_subject() { return quality_subject_.native(); }
@@ -664,6 +671,61 @@ void BaseViewModel::cycle_source() {
     sources_revision_subject_.set(sources_revision_subject_.value() + 1);
 }
 
+void BaseViewModel::load_folders() {
+    client_.call("library.folders", ipc::Json::object(),
+                 [this](const ipc::Json& result, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        std::vector<std::string> folders;
+        if (result.is_array()) {
+            for (const auto& entry : result) {
+                if (entry.is_string()) {
+                    folders.push_back(entry.get<std::string>());
+                }
+            }
+        }
+        folders_ = std::move(folders);
+        folders_subject_.set((std::to_string(folders_.size()) + " folders").c_str());
+    });
+}
+
+void BaseViewModel::add_music_folder() {
+    const char* home = std::getenv("HOME");
+    if (!home) {
+        return;
+    }
+    const std::string path = std::string(home) + "/Music";
+    client_.call("library.addFolder", ipc::Json{{"path", path}},
+                 [this, path](const ipc::Json&, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        const std::string text = "Added " + path;
+        status_subject_.set(text.c_str());
+        model_.set_status(text);
+        load_folders();
+        rescan();
+    });
+}
+
+void BaseViewModel::remove_folder(std::size_t index) {
+    if (index >= folders_.size()) {
+        return;
+    }
+    const std::string path = folders_[index];
+    client_.call("library.removeFolder", ipc::Json{{"path", path}},
+                 [this](const ipc::Json&, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        load_folders();
+    });
+}
+
 void BaseViewModel::rescan() {
     client_.call("library.rescan", ipc::Json::object());
     status_subject_.set("Scanning...");
@@ -705,6 +767,25 @@ void BaseViewModel::load_plugins() {
         plugins.insert(plugins.begin(), local);
         plugins_ = std::move(plugins);
         plugins_revision_subject_.set(plugins_revision_subject_.value() + 1);
+        for (const auto& plugin : plugins_) {
+            if (!plugin.login || plugin.preset) {
+                continue;
+            }
+            const std::string id = plugin.id;
+            client_.call("plugin.account", ipc::Json{{"id", id}},
+                         [this, id](const ipc::Json& account, const std::string& code, const std::string&) {
+                if (!code.empty()) {
+                    return;
+                }
+                for (auto& item : plugins_) {
+                    if (item.id == id) {
+                        item.signedIn = !account.is_null() && !account.empty();
+                        plugins_revision_subject_.set(plugins_revision_subject_.value() + 1);
+                        break;
+                    }
+                }
+            });
+        }
     });
 }
 
@@ -726,6 +807,18 @@ void BaseViewModel::set_plugin_enabled(std::size_t index, bool on) {
 
 void BaseViewModel::set_list_status(const std::string& status) {
     list_status_subject_.set(status.c_str());
+}
+
+int BaseViewModel::page_selection(model::AppPage page) const {
+    const auto index = static_cast<std::size_t>(page);
+    return index < page_selection_.size() ? page_selection_[index] : 0;
+}
+
+void BaseViewModel::set_page_selection(model::AppPage page, int row) {
+    const auto index = static_cast<std::size_t>(page);
+    if (index < page_selection_.size()) {
+        page_selection_[index] = row;
+    }
 }
 
 void BaseViewModel::clear_lists() {
@@ -843,6 +936,24 @@ void BaseViewModel::sign_out_account() {
             return;
         }
         account_subject_.set("Not signed in");
+        load_plugins();
+    });
+}
+
+void BaseViewModel::sign_out_plugin(std::size_t index) {
+    if (index >= plugins_.size() || plugins_[index].preset) {
+        return;
+    }
+    const std::string id = plugins_[index].id;
+    client_.call("plugin.signOut", ipc::Json{{"id", id}},
+                 [this, id](const ipc::Json&, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        const std::string text = "Signed out of " + id;
+        status_subject_.set(text.c_str());
+        model_.set_status(text);
         load_plugins();
     });
 }
@@ -1041,6 +1152,10 @@ void BaseViewModel::on_event(const std::string& name, const ipc::Json& data) {
         }
     }
     else if (name == "plugin.prompt") {
+        const std::string from = data.value("plugin", "");
+        if (!prompt_plugin_.empty() && !from.empty() && from != prompt_plugin_) {
+            return;
+        }
         const std::string text = data.value("text", "Scan the code to sign in");
         prompt_qr_subject_.set(data.value("qr", "").c_str());
         prompt_text_subject_.set(text.c_str());

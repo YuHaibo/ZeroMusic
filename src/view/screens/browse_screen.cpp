@@ -74,6 +74,7 @@ void BrowseScreen::build_content(lv_obj_t* content) {
 
 void BrowseScreen::build_menu() {
     mode_ = Mode::Menu;
+    menu_selected_ = std::clamp(view_model().page_selection(model::AppPage::Browse), 0, static_cast<int>(kMenu.size()) - 1);
     list_.reset();
     lv_obj_clean(content_);
     const auto colors = view::palette(view_model().is_dark_mode());
@@ -278,10 +279,12 @@ bool BrowseScreen::handle_key(std::uint32_t key, bool long_pressed) {
         switch (key) {
             case LV_KEY_UP:
                 menu_selected_ = (menu_selected_ + static_cast<int>(kMenu.size()) - 1) % static_cast<int>(kMenu.size());
+                view_model().set_page_selection(model::AppPage::Browse, menu_selected_);
                 refresh_menu();
                 return true;
             case LV_KEY_DOWN:
                 menu_selected_ = (menu_selected_ + 1) % static_cast<int>(kMenu.size());
+                view_model().set_page_selection(model::AppPage::Browse, menu_selected_);
                 refresh_menu();
                 return true;
             case LV_KEY_ENTER:

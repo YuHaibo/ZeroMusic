@@ -109,6 +109,9 @@ void TrackList::build() {
         lv_obj_set_style_text_color(times_[i], colors.text_disabled, 0);
     }
 
+    if (kind_ != Kind::Queue) {
+        selected_ = std::max(0, view_model_.page_selection(view_model_.current_page()));
+    }
     lv_subject_add_observer_obj(kind_ == Kind::Queue ? view_model_.queue_revision_subject()
                                                      : view_model_.list_revision_subject(),
                                 revision_changed,
@@ -185,10 +188,16 @@ bool TrackList::handle_key(std::uint32_t key, bool long_pressed) {
     switch (key) {
         case LV_KEY_UP:
             selected_ = (selected_ + count - 1) % count;
+            if (kind_ != Kind::Queue) {
+                view_model_.set_page_selection(view_model_.current_page(), selected_);
+            }
             refresh();
             return true;
         case LV_KEY_DOWN:
             selected_ = (selected_ + 1) % count;
+            if (kind_ != Kind::Queue) {
+                view_model_.set_page_selection(view_model_.current_page(), selected_);
+            }
             refresh();
             return true;
         case LV_KEY_BACKSPACE:

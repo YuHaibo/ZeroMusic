@@ -10,6 +10,7 @@
 #include "bindings.h"
 #include "theme.h"
 
+#include <algorithm>
 #include <array>
 
 namespace screen {
@@ -19,11 +20,12 @@ struct Row {
     const char* label;
 };
 
-constexpr std::array<Row, 5> kRows = {{
+constexpr std::array<Row, 6> kRows = {{
     {"Volume"},
     {"Quality"},
     {"Cache"},
     {"Language"},
+    {"Music folders"},
     {"Rescan library"},
 }};
 
@@ -40,6 +42,7 @@ void volume_changed(lv_observer_t* observer, lv_subject_t* subject) {
 } // namespace
 
 void SettingsScreen::build_content(lv_obj_t* content) {
+    selected_ = std::clamp(view_model().page_selection(model::AppPage::Settings), 0, static_cast<int>(kRows.size()) - 1);
     const auto colors = view::palette(view_model().is_dark_mode());
     auto* body = assets().load_standard_font(12);
     auto* caption = assets().load_standard_font(10);
@@ -87,6 +90,9 @@ void SettingsScreen::build_content(lv_obj_t* content) {
                 lv_label_bind_text(value, view_model().language_subject(), nullptr);
                 break;
             case 4:
+                lv_label_bind_text(value, view_model().folders_subject(), nullptr);
+                break;
+            case 5:
                 lv_label_set_text(value, "Enter");
                 break;
         }
@@ -141,10 +147,12 @@ bool SettingsScreen::handle_key(std::uint32_t key, bool long_pressed) {
     switch (key) {
         case LV_KEY_UP:
             selected_ = (selected_ + static_cast<int>(rows_.size()) - 1) % static_cast<int>(rows_.size());
+            view_model().set_page_selection(model::AppPage::Settings, selected_);
             refresh_selection();
             return true;
         case LV_KEY_DOWN:
             selected_ = (selected_ + 1) % static_cast<int>(rows_.size());
+            view_model().set_page_selection(model::AppPage::Settings, selected_);
             refresh_selection();
             return true;
         case LV_KEY_LEFT:
@@ -155,6 +163,9 @@ bool SettingsScreen::handle_key(std::uint32_t key, bool long_pressed) {
             return true;
         case LV_KEY_ENTER:
             if (selected_ == 4) {
+                view_model().show_page(model::AppPage::Folders);
+            }
+            else if (selected_ == 5) {
                 view_model().rescan();
             }
             else {

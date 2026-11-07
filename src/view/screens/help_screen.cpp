@@ -20,10 +20,11 @@ struct Row {
     const char* action;
 };
 
-constexpr std::array<Row, 7> kRows = {{
-    {"SPACE / 6", "Play or pause"},
-    {"5 / 7", "Previous / next track"},
-    {"4 / 9 / 0", "Now Playing / Queue / Lyrics"},
+constexpr std::array<Row, 8> kRows = {{
+    {"Q / SPACE", "Play or pause"},
+    {"W / E", "Previous / next track"},
+    {"LEFT / RIGHT", "Seek -10s / +10s"},
+    {"4 / 9 / 0", "Now / Queue / Lyrics"},
     {"8 / L", "Repeat mode / Like"},
     {"F X Z C", "Arrows; type in a field"},
     {"ESC", "Back; hold to exit"},
@@ -48,7 +49,7 @@ void HelpScreen::build_content(lv_obj_t* content) {
         lv_label_set_text(key, kRows[i].key);
         lv_obj_set_width(key, 86);
         lv_obj_set_style_text_font(key, caption ? caption : &lv_font_montserrat_10, 0);
-        lv_obj_align(key, LV_ALIGN_TOP_LEFT, 10, 20 + i * 17);
+        lv_obj_align(key, LV_ALIGN_TOP_LEFT, 10, 18 + i * 15);
         lv_obj_set_style_text_color(key, colors.primary, 0);
 
         auto* action = lv_label_create(content);
@@ -56,7 +57,7 @@ void HelpScreen::build_content(lv_obj_t* content) {
         lv_obj_set_width(action, 210);
         lv_label_set_long_mode(action, LV_LABEL_LONG_DOT);
         lv_obj_set_style_text_font(action, caption ? caption : &lv_font_montserrat_10, 0);
-        lv_obj_align(action, LV_ALIGN_TOP_LEFT, 100, 20 + i * 17);
+        lv_obj_align(action, LV_ALIGN_TOP_LEFT, 100, 18 + i * 15);
         lv_obj_set_style_text_color(action, colors.text, 0);
     }
 

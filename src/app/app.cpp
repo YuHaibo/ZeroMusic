@@ -209,6 +209,18 @@ private:
                 case '0':
                     view_model_.show_page(model::AppPage::Lyrics);
                     return true;
+                case 'q':
+                case 'Q':
+                    view_model_.toggle_play();
+                    return true;
+                case 'w':
+                case 'W':
+                    view_model_.previous();
+                    return true;
+                case 'e':
+                case 'E':
+                    view_model_.next();
+                    return true;
                 default:
                     break;
             }
