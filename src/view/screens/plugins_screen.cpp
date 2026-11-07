@@ -82,7 +82,7 @@ void PluginsScreen::build_list() {
     lv_obj_set_style_text_color(empty_, colors.text_disabled, 0);
 
     auto* hint = lv_label_create(screen_content_);
-    lv_label_set_text(hint, "UP/DOWN choose  ENTER on/off  G grant  S sign in  E settings  I install");
+    lv_label_set_text(hint, "UP/DOWN  ENTER on/off  S sign in  A account  E set  I install");
     lv_obj_set_style_text_font(hint, caption ? caption : &lv_font_montserrat_10, 0);
     lv_label_set_long_mode(hint, LV_LABEL_LONG_CLIP);
     lv_obj_set_width(hint, 300);
@@ -337,6 +337,11 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
         case 'i':
         case 'I':
             view_model().show_page(model::AppPage::Install);
+            return true;
+        case 'a':
+        case 'A':
+            view_model().load_account(static_cast<std::size_t>(selected_));
+            view_model().show_page(model::AppPage::Account);
             return true;
         case 'e':
         case 'E': {

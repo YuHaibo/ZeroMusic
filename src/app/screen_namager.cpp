@@ -6,6 +6,7 @@
 
 #include "screen_manager.h"
 
+#include "account_screen.h"
 #include "browse_screen.h"
 #include "detail_screen.h"
 #include "home_screen.h"
@@ -149,6 +150,9 @@ void ScreenManager::flush_requested_page() {
             break;
         case model::AppPage::Install:
             load_screen(std::make_unique<screen::InstallScreen>(view_model_, assets_), requested_page_);
+            break;
+        case model::AppPage::Account:
+            load_screen(std::make_unique<screen::AccountScreen>(view_model_, assets_), requested_page_);
             break;
         default: {
             const auto text = placeholder_for(requested_page_);

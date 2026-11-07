@@ -104,6 +104,7 @@ cmake --build build/dev -j8
 - Settings 页可调音量、源、音质、缓存、语言，并触发重扫。
 - Plugins 页列出插件、Enter 启停、`G` 授权 process、`S` 登录、
   `E` 打开插件设置；设置值用 ASCII 键盘编辑，Enter 保存。
+- Plugins 页 `I` 打开 GitHub 安装输入页，`A` 打开账户页（`X` 退出登录）。
 - Sign-in 页用 LVGL 内置 QRCode 渲染 `plugin.prompt.qr`，文本来自
   `plugin.prompt.text`。
 - core 新增 `player.remove`，以及 `plugin.install` / `update` / `remove`
@@ -128,9 +129,14 @@ cmake --build build/dev -j8
 
 - Plugins 页 `I` 打开 GitHub 安装输入页，输入 `owner/repo` 后 Enter 安装；
   进度经 `plugin.install` 事件显示。
-- 截图：[Install](../screenshot/zero-music-install.png)。
+- 截图：[Install](../screenshot/zero-music-install.png) /
+  [Plugin settings](../screenshot/zero-music-plugin-settings.png)。
 
-未做：账户页。
+- Plugins 页 `A` 打开账户页，显示登录名，`X` 退出登录。
+- 截图：[Install](../screenshot/zero-music-install.png) /
+  [Plugin settings](../screenshot/zero-music-plugin-settings.png)。
+
+未做：真机验证。
 v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 
 ### M6 构建与打包（已开始）
@@ -153,7 +159,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 
 ## 下一步
 
-1. **M5 剩余**：账户展示。
+1. **M5 完成**：插件设置、安装与账户页已可用。
 2. **M2 剩余**：`scan.progress`、图片磁盘缓存/并发限制。
 3. **M6 剩余**：cp0-cross 构建、`.deb` 实际打包与安装验证、
    APPLaunch 真机启动/退出、内存与帧率。

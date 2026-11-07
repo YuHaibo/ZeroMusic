@@ -138,6 +138,9 @@ public:
     void grant_plugin(std::size_t index, bool on);
     void sign_in_plugin(std::size_t index);
     void install_plugin(const std::string& repo);
+    void load_account(std::size_t index);
+    void sign_out_account();
+    lv_subject_t* account_subject();
     void load_plugin_settings(std::size_t index);
     void save_plugin_setting(std::size_t index, const std::string& value);
     const std::vector<PluginSetting>& plugin_settings() const { return plugin_settings_; }
@@ -219,6 +222,7 @@ private:
     std::vector<PluginItem> plugins_;
     std::vector<PluginSetting> plugin_settings_;
     std::string plugin_settings_id_;
+    std::string account_plugin_id_;
     std::vector<CollectionItem> collection_;
     CollectionKind collection_kind_ = CollectionKind::Albums;
     std::vector<std::uint8_t> cover_data_;
@@ -246,6 +250,7 @@ private:
     reactive::IntSubject plugin_settings_revision_subject_;
     reactive::StringSubject<512> prompt_qr_subject_;
     reactive::StringSubject<256> prompt_text_subject_;
+    reactive::StringSubject<96> account_subject_;
     reactive::IntSubject cover_revision_subject_;
     reactive::IntSubject collection_revision_subject_;
     reactive::IntSubject sources_revision_subject_;

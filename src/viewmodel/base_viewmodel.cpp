@@ -116,6 +116,7 @@ BaseViewModel::BaseViewModel()
       plugin_settings_revision_subject_(0),
       prompt_qr_subject_(""),
       prompt_text_subject_("Start sign-in from Plugins"),
+      account_subject_("Not signed in"),
       cover_revision_subject_(0),
       collection_revision_subject_(0),
       sources_revision_subject_(0),
@@ -174,6 +175,11 @@ BaseViewModel::BaseViewModel()
             model_.set_current_page(model::AppPage::SignIn);
             current_page_subject_.set(page_to_int(model::AppPage::SignIn));
         }
+        else if (page == "account") {
+            stack_ = {model::AppPage::Account};
+            model_.set_current_page(model::AppPage::Account);
+            current_page_subject_.set(page_to_int(model::AppPage::Account));
+        }
         else if (page == "install") {
             stack_ = {model::AppPage::Install};
             model_.set_current_page(model::AppPage::Install);
@@ -217,6 +223,7 @@ lv_subject_t* BaseViewModel::plugins_revision_subject() { return plugins_revisio
 lv_subject_t* BaseViewModel::plugin_settings_revision_subject() { return plugin_settings_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::prompt_qr_subject() { return prompt_qr_subject_.native(); }
 lv_subject_t* BaseViewModel::prompt_text_subject() { return prompt_text_subject_.native(); }
+lv_subject_t* BaseViewModel::account_subject() { return account_subject_.native(); }
 lv_subject_t* BaseViewModel::cover_revision_subject() { return cover_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::collection_revision_subject() { return collection_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::sources_revision_subject() { return sources_revision_subject_.native(); }
@@ -620,6 +627,42 @@ void BaseViewModel::install_plugin(const std::string& repo) {
         }
         status_subject_.set("Downloading plugin…");
         model_.set_status("Downloading plugin…");
+    });
+}
+
+void BaseViewModel::load_account(std::size_t index) {
+    if (index >= plugins_.size()) {
+        return;
+    }
+    account_plugin_id_ = plugins_[index].id;
+    account_subject_.set("Loading…");
+    client_.call("plugin.account", ipc::Json{{"id", account_plugin_id_}},
+                 [this](const ipc::Json& result, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            account_subject_.set(code == "unsupported" ? "Not signed in" : message.c_str());
+            return;
+        }
+        if (result.is_null() || result.empty()) {
+            account_subject_.set("Not signed in");
+            return;
+        }
+        const std::string name = result.value("name", "Signed in");
+        account_subject_.set(name.c_str());
+    });
+}
+
+void BaseViewModel::sign_out_account() {
+    if (account_plugin_id_.empty()) {
+        return;
+    }
+    client_.call("plugin.signOut", ipc::Json{{"id", account_plugin_id_}},
+                 [this](const ipc::Json&, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        account_subject_.set("Not signed in");
+        load_plugins();
     });
 }
 
