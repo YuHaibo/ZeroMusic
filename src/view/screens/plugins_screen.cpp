@@ -307,6 +307,10 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
         refresh();
         return true;
     }
+    if (key == 'i' || key == 'I') {
+        view_model().show_page(model::AppPage::Install);
+        return true;
+    }
     const int count = static_cast<int>(view_model().plugins().size());
     if (count == 0) {
         return false;
@@ -333,10 +337,6 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
         case 's':
         case 'S':
             view_model().sign_in_plugin(static_cast<std::size_t>(selected_));
-            return true;
-        case 'i':
-        case 'I':
-            view_model().show_page(model::AppPage::Install);
             return true;
         case 'a':
         case 'A':
