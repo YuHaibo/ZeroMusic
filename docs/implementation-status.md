@@ -111,7 +111,10 @@ cmake --build build/dev -j8
 - 插件安装完成时，安装页右上状态显示 `Installed <id>`；安装列表 6 行与
   底部提示不再重叠。
 - 切换音源会立即清空旧源的列表/集合数据，避免 Browse 继续显示旧插件内容。
-- Now Playing 的 LIKE 移到 Playing/Paused 行右侧，不再压住进度条。
+- Now Playing 的 LIKE 移到 Playing/Paused 行右侧；新增 `VOL n%` 音量读数。
+- Now Playing 显示 3 行滚动歌词（当前行高亮），随播放位置自动滚动；
+  歌词来自插件 `lyrics` 或本地 `.lrc`。实测 lizhi 能返回歌词。
+- 截图更新：[Now Playing](../screenshot/zero-music-now-playing.png)。
 - Plugins 页 `I` 打开安装页：默认列出 GitHub 话题
   `mygo-music-plugin` 的公开仓库（`plugin.available`），上下选择、Enter
   安装；`T` 可手动输入 `owner/repo`，`A` 打开账户页（`X` 退出登录）。
@@ -188,7 +191,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 已验证产物（2026-11-07）：
 
 - `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
-  `773322398416cf35c2c50517fb4077f9249641dfe3f35c7b261f7df9e94fcbbf`；
+  `ce4c9e6d22f10f588af2b471f2c39082a669c2883c311d8e59cecb91547e5ded`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与

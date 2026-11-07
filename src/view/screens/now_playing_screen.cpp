@@ -28,6 +28,23 @@ void cover_changed(lv_observer_t* observer, lv_subject_t*) {
     }
 }
 
+void lyrics_changed(lv_observer_t* observer, lv_subject_t*) {
+    auto* screen = static_cast<NowPlayingScreen*>(lv_observer_get_user_data(observer));
+    if (screen) {
+        screen->handle_key(0, false);
+    }
+}
+
+void volume_changed(lv_observer_t* observer, lv_subject_t* subject) {
+    auto* label = lv_observer_get_target_obj(observer);
+    if (!label) {
+        return;
+    }
+    char text[16];
+    lv_snprintf(text, sizeof(text), "VOL %d%%", static_cast<int>(lv_subject_get_int(subject)));
+    lv_label_set_text(label, text);
+}
+
 } // namespace
 
 void NowPlayingScreen::build_content(lv_obj_t* content) {
@@ -90,7 +107,7 @@ void NowPlayingScreen::build_content(lv_obj_t* content) {
     progress_ = lv_bar_create(content);
     lv_obj_remove_style_all(progress_);
     lv_obj_set_size(progress_, 300, 4);
-    lv_obj_align(progress_, LV_ALIGN_TOP_MID, 0, 94);
+    lv_obj_align(progress_, LV_ALIGN_TOP_MID, 0, 86);
     lv_obj_set_style_radius(progress_, 2, 0);
     lv_obj_set_style_bg_opa(progress_, LV_OPA_COVER, 0);
     lv_obj_set_style_bg_color(progress_, colors.border, LV_PART_MAIN);
@@ -103,22 +120,14 @@ void NowPlayingScreen::build_content(lv_obj_t* content) {
     auto* position = lv_label_create(content);
     lv_label_bind_text(position, view_model().position_text_subject(), nullptr);
     lv_obj_set_style_text_font(position, caption ? caption : &lv_font_montserrat_10, 0);
-    lv_obj_align(position, LV_ALIGN_TOP_LEFT, 10, 100);
+    lv_obj_align(position, LV_ALIGN_TOP_LEFT, 10, 92);
     lv_obj_set_style_text_color(position, colors.text_disabled, 0);
 
     auto* duration = lv_label_create(content);
     lv_label_bind_text(duration, view_model().duration_text_subject(), nullptr);
     lv_obj_set_style_text_font(duration, caption ? caption : &lv_font_montserrat_10, 0);
-    lv_obj_align(duration, LV_ALIGN_TOP_RIGHT, -10, 100);
+    lv_obj_align(duration, LV_ALIGN_TOP_RIGHT, -10, 92);
     lv_obj_set_style_text_color(duration, colors.text_disabled, 0);
-
-    auto* hints = lv_label_create(content);
-    lv_label_set_text(hints, "SPACE play   LEFT/RIGHT seek   UP/DOWN volume");
-    lv_obj_set_style_text_font(hints, caption ? caption : &lv_font_montserrat_10, 0);
-    lv_label_set_long_mode(hints, LV_LABEL_LONG_CLIP);
-    lv_obj_set_width(hints, 300);
-    lv_obj_align(hints, LV_ALIGN_BOTTOM_MID, 0, -20);
-    lv_obj_set_style_text_color(hints, colors.text_disabled, 0);
 
     auto* like = lv_label_create(content);
     reactive::bind_bool_text(like, view_model().liked_subject(), "LIKE", "LIKED");
@@ -126,16 +135,27 @@ void NowPlayingScreen::build_content(lv_obj_t* content) {
     lv_obj_align(like, LV_ALIGN_TOP_RIGHT, -10, 66);
     lv_obj_set_style_text_color(like, colors.primary, 0);
 
-    lv_subject_add_observer_obj(view_model().cover_revision_subject(), cover_changed, content, this);
-    refresh_cover();
+    volume_ = lv_label_create(content);
+    lv_obj_set_style_text_font(volume_, caption ? caption : &lv_font_montserrat_10, 0);
+    lv_obj_align(volume_, LV_ALIGN_TOP_RIGHT, -10, 76);
+    lv_obj_set_style_text_color(volume_, colors.text_disabled, 0);
+    lv_subject_add_observer_obj(view_model().volume_subject(), volume_changed, volume_, nullptr);
 
-    auto* more = lv_label_create(content);
-    lv_label_set_text(more, "5/7 track   8 repeat   HOLD ESC exit");
-    lv_obj_set_style_text_font(more, caption ? caption : &lv_font_montserrat_10, 0);
-    lv_label_set_long_mode(more, LV_LABEL_LONG_CLIP);
-    lv_obj_set_width(more, 300);
-    lv_obj_align(more, LV_ALIGN_BOTTOM_MID, 0, -6);
-    lv_obj_set_style_text_color(more, colors.text_disabled, 0);
+    for (int i = 0; i < 3; ++i) {
+        lyric_lines_[i] = lv_label_create(content);
+        lv_obj_set_width(lyric_lines_[i], 300);
+        lv_label_set_long_mode(lyric_lines_[i], LV_LABEL_LONG_DOT);
+        lv_obj_set_style_text_font(lyric_lines_[i], caption ? caption : &lv_font_montserrat_10, 0);
+        lv_obj_align(lyric_lines_[i], LV_ALIGN_TOP_LEFT, 10, 106 + i * 13);
+        lv_obj_set_style_text_color(lyric_lines_[i], colors.text_disabled, 0);
+    }
+
+    lv_subject_add_observer_obj(view_model().cover_revision_subject(), cover_changed, content, this);
+    lv_subject_add_observer_obj(view_model().lyrics_revision_subject(), lyrics_changed, content, this);
+    lv_subject_add_observer_obj(view_model().progress_subject(), lyrics_changed, content, this);
+    refresh_cover();
+    refresh_lyrics();
+
 }
 
 void NowPlayingScreen::refresh_cover() {
@@ -167,12 +187,50 @@ void NowPlayingScreen::refresh_cover() {
     }
 }
 
+void NowPlayingScreen::refresh_lyrics() {
+    const auto& lyrics = view_model().lyrics();
+    if (lyrics.empty()) {
+        lv_label_set_text(lyric_lines_[0], "No lyrics for this track");
+        lv_obj_set_style_text_color(lyric_lines_[0],
+                                    view::palette(view_model().is_dark_mode()).text_disabled,
+                                    0);
+        for (int i = 1; i < 3; ++i) {
+            lv_obj_add_flag(lyric_lines_[i], LV_OBJ_FLAG_HIDDEN);
+        }
+        return;
+    }
+    const auto position = view_model().position_ms();
+    int current = 0;
+    for (std::size_t i = 0; i < lyrics.size(); ++i) {
+        if (lyrics[i].time_ms <= position) {
+            current = static_cast<int>(i);
+        }
+        else {
+            break;
+        }
+    }
+    const int start = std::max(0, current - 1);
+    for (int i = 0; i < 3; ++i) {
+        const int index = start + i;
+        if (index >= static_cast<int>(lyrics.size())) {
+            lv_obj_add_flag(lyric_lines_[i], LV_OBJ_FLAG_HIDDEN);
+            continue;
+        }
+        lv_obj_remove_flag(lyric_lines_[i], LV_OBJ_FLAG_HIDDEN);
+        lv_label_set_text(lyric_lines_[i], lyrics[static_cast<std::size_t>(index)].text.c_str());
+        const bool on = index == current;
+        const auto colors = view::palette(view_model().is_dark_mode());
+        lv_obj_set_style_text_color(lyric_lines_[i], on ? colors.primary : colors.text_disabled, 0);
+    }
+}
+
 bool NowPlayingScreen::handle_key(std::uint32_t key, bool long_pressed) {
     if (long_pressed) {
         return false;
     }
     if (key == 0) {
         refresh_cover();
+        refresh_lyrics();
         return true;
     }
     switch (key) {
