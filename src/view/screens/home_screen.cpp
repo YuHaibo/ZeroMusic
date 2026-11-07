@@ -49,15 +49,6 @@ void HomeScreen::build_content(lv_obj_t* content) {
     lv_obj_align(source, LV_ALIGN_TOP_LEFT, 6, 110);
     lv_obj_set_style_text_color(source, colors.primary, 0);
 
-    status_ = lv_label_create(content);
-    lv_label_bind_text(status_, view_model().status_subject(), nullptr);
-    lv_obj_set_width(status_, 104);
-    lv_obj_set_style_text_align(status_, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_style_text_font(status_, small ? small : &lv_font_montserrat_10, 0);
-    lv_label_set_long_mode(status_, LV_LABEL_LONG_DOT);
-    lv_obj_align(status_, LV_ALIGN_TOP_LEFT, 6, 124);
-    lv_obj_set_style_text_color(status_, colors.text_disabled, 0);
-
     auto* menu = lv_obj_create(content);
     lv_obj_remove_style_all(menu);
     lv_obj_set_size(menu, 190, LV_PCT(100));

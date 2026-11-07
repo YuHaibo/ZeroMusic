@@ -178,6 +178,11 @@ BaseViewModel::BaseViewModel()
             model_.set_current_page(model::AppPage::SignIn);
             current_page_subject_.set(page_to_int(model::AppPage::SignIn));
         }
+        else if (page == "help") {
+            stack_ = {model::AppPage::Help};
+            model_.set_current_page(model::AppPage::Help);
+            current_page_subject_.set(page_to_int(model::AppPage::Help));
+        }
         else if (page == "account") {
             stack_ = {model::AppPage::Account};
             model_.set_current_page(model::AppPage::Account);
@@ -689,6 +694,15 @@ void BaseViewModel::load_plugins() {
                 plugins.push_back(std::move(item));
             }
         }
+        // The local files are a source too, always there and not removable.
+        plugins.erase(std::remove_if(plugins.begin(), plugins.end(), [](const PluginItem& p) { return p.id == "local"; }),
+                      plugins.end());
+        PluginItem local;
+        local.id = "local";
+        local.name = "Local Files";
+        local.enabled = true;
+        local.preset = true;
+        plugins.insert(plugins.begin(), local);
         plugins_ = std::move(plugins);
         plugins_revision_subject_.set(plugins_revision_subject_.value() + 1);
     });
@@ -798,7 +812,7 @@ void BaseViewModel::install_plugin(const std::string& repo) {
 }
 
 void BaseViewModel::load_account(std::size_t index) {
-    if (index >= plugins_.size()) {
+    if (index >= plugins_.size() || plugins_[index].preset) {
         return;
     }
     account_plugin_id_ = plugins_[index].id;
@@ -837,6 +851,12 @@ void BaseViewModel::remove_plugin(std::size_t index) {
     if (index >= plugins_.size()) {
         return;
     }
+    if (plugins_[index].preset) {
+        const std::string text = plugins_[index].name + " cannot be removed";
+        status_subject_.set(text.c_str());
+        model_.set_status(text);
+        return;
+    }
     const std::string id = plugins_[index].id;
     client_.call("plugin.remove", ipc::Json{{"id", id}},
                  [this, id](const ipc::Json&, const std::string& code, const std::string& message) {
@@ -852,7 +872,7 @@ void BaseViewModel::remove_plugin(std::size_t index) {
 }
 
 void BaseViewModel::load_plugin_settings(std::size_t index) {
-    if (index >= plugins_.size()) {
+    if (index >= plugins_.size() || plugins_[index].preset) {
         return;
     }
     plugin_settings_id_ = plugins_[index].id;
@@ -898,7 +918,7 @@ void BaseViewModel::save_plugin_setting(std::size_t index, const std::string& va
 }
 
 void BaseViewModel::sign_in_plugin(std::size_t index) {
-    if (index >= plugins_.size()) {
+    if (index >= plugins_.size() || plugins_[index].preset) {
         return;
     }
     const std::string id = plugins_[index].id;

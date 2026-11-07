@@ -32,7 +32,7 @@ private:
     std::vector<lv_obj_t*> rows_;
     std::unique_ptr<view::widgets::CoverView> cover_;
     int selected_ = 0;
-    lv_obj_t* status_{nullptr};
+
 };
 
 } // namespace screen

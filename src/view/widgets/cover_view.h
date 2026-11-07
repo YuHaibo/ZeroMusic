@@ -10,6 +10,7 @@
 #include "base_widget.h"
 
 #include <cstdint>
+#include <string>
 #include <memory>
 #include <vector>
 
@@ -43,6 +44,7 @@ private:
     lv_obj_t* image_{nullptr};
     lv_obj_t* initials_{nullptr};
     std::vector<std::unique_ptr<Cover>> covers_;
+    std::string default_src_;
 };
 
 } // namespace view::widgets

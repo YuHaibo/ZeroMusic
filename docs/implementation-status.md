@@ -100,9 +100,10 @@ cmake --build build/dev -j8
   [Search](../screenshot/zero-music-search.png)。
 
 - Home 增加 Recent 页，读取当前源的 `recent`。
+- Browse 的 Help 页与 Fn+H 一样显示完整键位表。
 - Now Playing 按 `L` 喜欢/取消喜欢当前曲目，状态来自 `isLiked`。
-- Home 左侧改为当前专辑封面（100 px），封面下显示当前插件与状态；
-  菜单在右侧。
+- Home 左侧改为当前专辑封面（100 px），封面下只显示当前插件（不再重复
+  显示 Using/Ready 第二行）；菜单在右侧。
 - Now Playing 重排：大封面在左，右侧标题/艺人/专辑/状态/LIKE/VOL/进度，
   底部两行歌词；不再纵向拥挤。
 - 换曲时先清空封面并显示默认 `ZM`，再异步加载新图；旧请求用 generation
@@ -120,6 +121,7 @@ cmake --build build/dev -j8
 - Plugins 页列出插件；Enter 直接选用（不再显示 On/Off），当前源行显示
   `Using`；支持 `Q` 列表内筛选、`D` 两次删除、`G` 授权 process、
   `S` 登录、`E` 设置；声明了 `signIn` 的插件显示 `Login *`。
+- Local Files 作为预置插件项列在 Plugins 第一位，可选用但不可删除。
 - 插件列表选中项标题超长时横向滚动；歌单/专辑/艺人/安装列表同样。
 - 插件安装完成时，安装页右上状态显示 `Installed <id>`；安装列表 6 行与
   底部提示不再重叠。
@@ -128,8 +130,11 @@ cmake --build build/dev -j8
   `Error: ...`，不再是一片空白。
 - 选中行的长标题用 `LV_LABEL_LONG_SCROLL_CIRCULAR` 横向滚动，其他行省略号。
 - Now Playing 的 LIKE 移到 Playing/Paused 行右侧；新增 `VOL n%` 音量读数。
-- Now Playing 显示 3 行滚动歌词（当前行高亮），随播放位置自动滚动；
-  歌词来自插件 `lyrics` 或本地 `.lrc`。实测 lizhi 能返回歌词。
+- Now Playing 显示 2 行滚动歌词（当前行高亮），随播放位置自动滚动；
+  标题/艺人/专辑超长时横向滚动，不再遮挡。
+- 默认专辑封面使用应用图标图片；换曲时先回到默认图。
+- 安装页右上状态宽度加大，不再压到列表。
+- 应用图标改为用户提供的转盘图，黑色背景。
 - 截图更新：[Now Playing](../screenshot/zero-music-now-playing.png)。
 - Plugins 页 `I` 打开安装页：默认列出 GitHub 话题
   `mygo-music-plugin` 的公开仓库（`plugin.available`），上下选择、Enter
@@ -207,7 +212,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 已验证产物（2026-11-07）：
 
 - `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
-  `f7f1d9ce92173b454d58195ddc441b152c2326323c3a9901ad118db92f740cc9`；
+  `78d27d6b8a537e13bb473224ed20011ac379383b11bf97d376f436b25d36f07c`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与

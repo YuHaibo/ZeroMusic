@@ -56,7 +56,7 @@ void NowPlayingScreen::build_content(lv_obj_t* content) {
     auto* title = lv_label_create(content);
     lv_label_bind_text(title, view_model().track_title_subject(), nullptr);
     lv_obj_set_style_text_font(title, big ? big : &lv_font_montserrat_16, 0);
-    lv_label_set_long_mode(title, LV_LABEL_LONG_DOT);
+    lv_label_set_long_mode(title, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_width(title, 194);
     lv_obj_align(title, LV_ALIGN_TOP_LEFT, 118, 6);
     lv_obj_set_style_text_color(title, colors.text, 0);
@@ -64,7 +64,7 @@ void NowPlayingScreen::build_content(lv_obj_t* content) {
     auto* artist = lv_label_create(content);
     lv_label_bind_text(artist, view_model().track_artist_subject(), nullptr);
     lv_obj_set_style_text_font(artist, body ? body : &lv_font_montserrat_12, 0);
-    lv_label_set_long_mode(artist, LV_LABEL_LONG_DOT);
+    lv_label_set_long_mode(artist, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_width(artist, 194);
     lv_obj_align(artist, LV_ALIGN_TOP_LEFT, 118, 30);
     lv_obj_set_style_text_color(artist, colors.text, 0);
@@ -72,7 +72,7 @@ void NowPlayingScreen::build_content(lv_obj_t* content) {
     auto* album = lv_label_create(content);
     lv_label_bind_text(album, view_model().track_album_subject(), nullptr);
     lv_obj_set_style_text_font(album, caption ? caption : &lv_font_montserrat_10, 0);
-    lv_label_set_long_mode(album, LV_LABEL_LONG_DOT);
+    lv_label_set_long_mode(album, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_width(album, 194);
     lv_obj_align(album, LV_ALIGN_TOP_LEFT, 118, 46);
     lv_obj_set_style_text_color(album, colors.text_disabled, 0);

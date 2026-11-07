@@ -68,6 +68,7 @@ struct PluginItem {
     bool granted = false;
     bool process = false;
     bool login = false;
+    bool preset = false;
 };
 
 // LyricItem is a timed line, as the core parsed it.

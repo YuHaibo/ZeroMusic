@@ -55,6 +55,10 @@ void CoverView::build() {
     lv_obj_center(image_);
     lv_obj_add_flag(image_, LV_OBJ_FLAG_HIDDEN);
 
+    if (const auto cover = assets_.resolve("images/zero-music.png"); !cover.empty()) {
+        default_src_ = "A:" + cover.string();
+    }
+
     lv_subject_add_observer_obj(view_model_.cover_revision_subject(), cover_changed, core_obj_, this);
     refresh();
 }
@@ -62,8 +66,16 @@ void CoverView::build() {
 void CoverView::refresh() {
     const auto& data = view_model_.cover_data();
     if (data.empty() || view_model_.cover_width() <= 0) {
-        lv_obj_add_flag(image_, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_remove_flag(initials_, LV_OBJ_FLAG_HIDDEN);
+        if (!default_src_.empty()) {
+            lv_image_set_src(image_, default_src_.c_str());
+            lv_image_set_scale(image_, static_cast<std::uint32_t>(size_ * 256 / 512));
+            lv_obj_remove_flag(image_, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(initials_, LV_OBJ_FLAG_HIDDEN);
+        }
+        else {
+            lv_obj_add_flag(image_, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_remove_flag(initials_, LV_OBJ_FLAG_HIDDEN);
+        }
         return;
     }
     auto cover = std::make_unique<Cover>();
@@ -76,6 +88,7 @@ void CoverView::refresh() {
     cover->dsc.data_size = static_cast<std::uint32_t>(cover->data.size());
     cover->dsc.data = cover->data.data();
     lv_image_set_src(image_, &cover->dsc);
+    lv_image_set_scale(image_, 256);
     lv_obj_remove_flag(image_, LV_OBJ_FLAG_HIDDEN);
     lv_obj_add_flag(initials_, LV_OBJ_FLAG_HIDDEN);
     covers_.push_back(std::move(cover));

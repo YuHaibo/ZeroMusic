@@ -428,11 +428,19 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
         case 'g':
         case 'G': {
             const auto& plugin = view_model().plugins()[original(selected_)];
+            if (plugin.preset) {
+                lv_label_set_text(status_, "Local Files has no permissions");
+                return true;
+            }
             view_model().grant_plugin(original(selected_), !plugin.granted);
             return true;
         }
         case 's':
         case 'S':
+            if (view_model().plugins()[original(selected_)].preset) {
+                lv_label_set_text(status_, "Local Files needs no sign-in");
+                return true;
+            }
             view_model().sign_in_plugin(original(selected_));
             return true;
         case 'd':
@@ -455,11 +463,19 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
             return true;
         case 'a':
         case 'A':
+            if (view_model().plugins()[original(selected_)].preset) {
+                lv_label_set_text(status_, "Local Files has no account");
+                return true;
+            }
             view_model().load_account(original(selected_));
             view_model().show_page(model::AppPage::Account);
             return true;
         case 'e':
         case 'E': {
+            if (view_model().plugins()[original(selected_)].preset) {
+                lv_label_set_text(status_, "Local Files has no settings");
+                return true;
+            }
             mode_ = Mode::Settings;
             edit_selected_ = 0;
             editing_ = false;

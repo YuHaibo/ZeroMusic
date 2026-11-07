@@ -38,13 +38,13 @@ void InstallScreen::build_list() {
     auto* caption = assets().load_standard_font(10);
 
     auto* title = lv_label_create(content_);
-    lv_label_set_text(title, "Install plugin");
+    lv_label_set_text(title, "Install");
     lv_obj_set_style_text_font(title, body ? body : &lv_font_montserrat_12, 0);
     lv_obj_align(title, LV_ALIGN_TOP_LEFT, 10, 2);
     lv_obj_set_style_text_color(title, colors.text, 0);
 
     status_ = lv_label_create(content_);
-    lv_obj_set_width(status_, 180);
+    lv_obj_set_width(status_, 215);
     lv_obj_set_style_text_align(status_, LV_TEXT_ALIGN_RIGHT, 0);
     lv_label_set_long_mode(status_, LV_LABEL_LONG_DOT);
     lv_obj_set_style_text_font(status_, caption ? caption : &lv_font_montserrat_10, 0);
