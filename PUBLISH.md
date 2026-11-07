@@ -25,7 +25,7 @@ Portal: <https://dev.cardputer.cc/#/upload>
 
 - Application name: `Zero Music`
 - One-line summary (maximum 80 characters): `Local music and streaming services, plugin-powered.`
-- Description: `Zero Music plays local files and MyGo Music stream plugins on Cardputer Zero, with a keyboard-first LVGL interface built for its 320x170 screen.`
+- Description: `Zero Music plays local files and, with third-party MyGo Music-compatible plugins, streaming sources on Cardputer Zero. It ships no music catalogue or service credentials. The keyboard-first LVGL interface is built for the 320x170 screen.`
 - Categories (maximum 6): `Media`
 
 ## Assets

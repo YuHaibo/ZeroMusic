@@ -41,6 +41,38 @@
 </p>
 Zero Music is two processes: a Go core (library, player, plugins, settings) and a C++/LVGL UI that talks to it over a Unix-socket JSON-RPC protocol. Desktop builds use an SDL simulator; the device builds against Linux fbdev/evdev.
 
+## Music sources and plugins
+
+> [!IMPORTANT]
+> **Zero Music does not provide, host, bundle or distribute any music source.**
+> The application contains no music catalogue and no streaming service credentials.
+> Local files can be played without any plugin. Network music is only available
+> after installing a MyGo Music-compatible plugin.
+
+Zero Music reuses part of the source code of
+[MyGo Music](https://github.com/egoist/mygo-music) and is compatible with its
+plugin system. The packages under `core/internal/music`, `core/internal/plugin`,
+`core/internal/player`, `core/internal/local`, `core/internal/lyrics` and
+`core/internal/i18n` are adapted from that project, which is licensed under
+AGPL-3.0. See [NOTICE](NOTICE) for details.
+
+Plugins are **separate third-party software**. They are not part of MyGo Music
+or Zero Music, and this project does not control, review, endorse or support
+them. A plugin may contact its own services, require its own account, and run
+JavaScript with the permissions you grant through the Plugins page. Only install
+plugins whose source and operator you trust.
+
+Plugin directory:
+
+- <https://music.egoist.dev/plugins/>
+
+Writing your own plugin:
+
+- <https://github.com/egoist/mygo-music#publishing-a-plugin>
+
+You are responsible for making sure that the plugins you install and the music
+you access are legal in your jurisdiction and comply with the services' terms.
+
 ## Project Overview
 
 In this example project, we used small MVVM-style structure around LVGL:
@@ -55,12 +87,12 @@ In this example project, we used small MVVM-style structure around LVGL:
 
 Current UI:
 
-- Home: source, connection state, and entries for Now Playing, Browse, Search, Settings, Plugins and Help.
-- Now Playing: track, artist, album, progress, time and the transport keys.
+- Home: current album cover, active source, and entries for Now Playing, Recent, Browse, Search, Settings, Plugins and Help.
+- Now Playing: cover, title, artist, album, progress, volume, LIKE and scrolling lyrics.
 - Keys: `Q`/Space play-pause, `W` previous, `E` next, `Left/Right` seek -/+10s, `Up/Down` volume, `4` Now Playing, `5` previous, `6` play-pause, `7` next, `8` repeat, `9` queue, `0` lyrics, `L` like, short `ESC` back, hold `ESC` exit, `Fn+H` help, `Fn+J` screenshot.
-- Plugins: Enter selects/enables the plugin as the active source, `Tab` filters, `D` twice removes, `S` signs in, `O` signs out, `P` edits settings, `I` installs.
+- Plugins: Enter selects a source, `Tab` filters, `D` twice removes, `S` signs in, `O` signs out, `P` edits settings, `I` installs. Local Files is a built-in, non-removable source. Plugins that support login show `Login *` or `Logged in`.
 - `F/Z/X/C` are Up/Left/Down/Right without Fn on lists and menus; while a search, install or plugin-setting field is being edited they type their letters instead. Arrow keys always navigate.
-- Pages: Browse and Search list the active source and play from the focused row; Settings changes volume, quality, cache, language and rescans; Plugins turns sources on and off, picks the active source with U, filters with Q, grants process access and starts sign-in.
+- Pages: Browse and Search list the active source and play from the focused row; Settings changes volume, quality, cache, language, local music folders and rescans; Plugins picks the active source, filters, grants process access and starts sign-in.
 
 ## Repository Layout
 
@@ -528,4 +560,21 @@ If you have better framework designs on Embedded Linux or build system practice,
 
 # License
 
-Project released under MIT license. More license information can be found in assets folder. 
+Zero Music is distributed as a combined work under the **GNU Affero General
+Public License, version 3 only (AGPL-3.0-only)**. The full license text is in
+[LICENSE](LICENSE).
+
+Why "only": the project includes code adapted from
+[MyGo Music](https://github.com/egoist/mygo-music), which is offered under
+AGPL-3.0. This project therefore does not claim a later-version option for the
+combined work. The C++/LVGL application began from
+[CardputerZero/Template](https://github.com/CardputerZero/Template); those MIT
+licensed portions retain their MIT notices.
+
+Third-party components and their licenses are recorded in
+[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md), [NOTICE](NOTICE), and
+`assets/fonts/LICENSE.txt`.
+
+If you distribute a binary, you must also make the complete corresponding
+source available under the AGPL. Keep the source in a public repository and
+offer it from the same place as the binary.

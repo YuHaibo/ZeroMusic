@@ -203,7 +203,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
   `/etc/zero-music.conf`、桌面项和资源；systemd 服务默认关闭。
 - 依赖加入 `libpulse0 | libasound2`、`ca-certificates`、`fonts-noto-cjk`；
   `.deb` 文件名改为 `zero-music_<version>_<rev>_<arch>.deb`。
-- 许可证改为 AGPL-3.0，新增 `NOTICE`；store 名称/简介/分类/截图/网络权限
+- 许可证改为 AGPL-3.0-only，新增 `NOTICE`；store 名称/简介/分类/截图/网络权限
   已改为 Zero Music。
 - 已验证：`cmake --build` 同时构建 UI 与 Go core；wrapper 启动/退出全流程
   正常，core 收到信号后删除 socket。
@@ -216,7 +216,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 已验证产物（2026-11-07）：
 
 - `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
-  `d7622dcd77804c173a8db4894180e546ccf213d65de9dfe1e6cabf414ebcc320`；
+  `fcbd8aa1c69be477ea06087fd5424bff8d677298487c398a26ef9a41d137e498`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与

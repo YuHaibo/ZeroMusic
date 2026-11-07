@@ -5,7 +5,7 @@
   "description": "A Cardputer Zero music player with MyGo Music plugin support",
   "store": {
     "summary": "Local music and streaming services, plugin-powered.",
-    "description": "Zero Music plays local files and MyGo Music stream plugins on Cardputer Zero, with a keyboard-first LVGL interface built for its 320x170 screen.",
+    "description": "Zero Music plays local files and, with third-party MyGo Music-compatible plugins, streaming sources on Cardputer Zero. It ships no music catalogue or service credentials. The keyboard-first LVGL interface is built for the 320x170 screen.",
     "categories": [
       "Media"
     ],
@@ -16,7 +16,7 @@
       "screenshot/zero-music-install.png"
     ],
     "icon": "assets/images/zero-music.png",
-    "license": "AGPL-3.0-or-later",
+    "license": "AGPL-3.0-only",
     "source_repo": "TODO",
     "author": {
       "display_name": "H.B. Yu"
@@ -34,7 +34,7 @@
     "locales": {
       "zh-CN": {
         "summary": "本地音乐与流媒体插件播放器",
-        "description": "Zero Music 在 Cardputer Zero 上播放本地音乐和 MyGo Music 流媒体插件，采用为 320×170 屏幕设计的键盘优先 LVGL 界面。"
+        "description": "Zero Music 在 Cardputer Zero 上播放本地音乐，并通过第三方 MyGo Music 兼容插件接入流媒体源。软件不附带任何音乐目录或服务凭据，界面为 320×170 屏幕和键盘操作设计。"
       }
     }
   },

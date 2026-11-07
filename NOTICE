@@ -1,23 +1,23 @@
 Zero Music
 ==========
 
-Zero Music is licensed under the GNU Affero General Public License, version 3
-or later (AGPL-3.0-or-later). See LICENSE.
+Zero Music is distributed as a combined work under the GNU Affero General
+Public License, version 3 only (AGPL-3.0-only). See LICENSE.
 
 It reuses code from MyGo Music (https://github.com/egoist/mygo-music), which is
-also AGPL-3.0. The Go packages under core/internal/music, core/internal/plugin,
-core/internal/player, core/internal/local, core/internal/lyrics and
-core/internal/i18n were copied from it and adapted for Cardputer Zero.
+licensed under AGPL-3.0. The Go packages under core/internal/music,
+core/internal/plugin, core/internal/player, core/internal/local,
+core/internal/lyrics and core/internal/i18n were copied from it and adapted
+for Cardputer Zero. No later-version option is claimed for the combined work.
 
 The project began from CardputerZero/Template (MIT), Copyright (c) 2026 M5Stack
 CardputerZero Community. The CMake, LVGL lifecycle, platform and asset code
 retain that license.
 
-Third-party components:
+The full third-party license texts and the Go module list are in
+THIRD_PARTY_LICENSES.md. moejs (Apache-2.0) is used by the plugin host; LVGL,
+fmt and nlohmann/json are MIT. Font and icon licenses are in
+assets/fonts/LICENSE.txt.
 
-- moejs (https://github.com/MoeForge/moejs), Apache-2.0, used by the plugin host.
-- LVGL 9.5, MIT.
-- fmt, MIT.
-- nlohmann/json, MIT.
-- Phosphor icons and the bundled fonts are under the licenses in
-  assets/fonts/LICENSE.txt; see that file.
+MyGo Music-compatible plugins are separate third-party works and are not part
+of Zero Music or MyGo Music. Their own licenses and terms apply.

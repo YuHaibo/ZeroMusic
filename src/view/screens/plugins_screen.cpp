@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2026 Zero Music contributors
  *
- * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-License-Identifier: AGPL-3.0-only
  */
 
 #include "plugins_screen.h"
