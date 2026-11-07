@@ -18,6 +18,7 @@ public:
     using BaseScreen::BaseScreen;
 
     bool handle_key(std::uint32_t key, bool long_pressed) override;
+    bool text_input_active() const override { return true; }
 
 protected:
     void build_content(lv_obj_t* content) override;

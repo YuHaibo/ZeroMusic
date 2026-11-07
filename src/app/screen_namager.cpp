@@ -171,6 +171,10 @@ bool ScreenManager::handle_key(std::uint32_t key, bool long_pressed) {
     return current_screen_ && current_screen_->handle_key(key, long_pressed);
 }
 
+bool ScreenManager::text_input_active() const {
+    return current_screen_ && current_screen_->text_input_active();
+}
+
 lv_obj_t* ScreenManager::current_screen() const {
     return current_screen_ ? current_screen_->root() : nullptr;
 }

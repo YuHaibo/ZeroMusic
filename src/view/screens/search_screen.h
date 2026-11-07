@@ -22,6 +22,7 @@ public:
     using BaseScreen::BaseScreen;
 
     bool handle_key(std::uint32_t key, bool long_pressed) override;
+    bool text_input_active() const override { return editing_; }
     void reload();
 
 protected:

@@ -58,6 +58,7 @@ Current UI:
 - Home: source, connection state, and entries for Now Playing, Browse, Search, Settings, Plugins and Help.
 - Now Playing: track, artist, album, progress, time and the transport keys.
 - Keys: `4` Now Playing, `5` previous, `6`/Space play-pause, `7` next, `8` repeat, `9` queue, `0` lyrics, `L` like, short `ESC` back, hold `ESC` exit, `Fn+H` help, `Fn+J` screenshot.
+- `F/Z/X/C` are Up/Left/Down/Right without Fn on lists and menus; while a search, install or plugin-setting field is being edited they type their letters instead. Arrow keys always navigate.
 - Pages: Browse and Search list the active source and play from the focused row; Settings changes volume, quality, normalization, cache, language and rescans; Plugins turns sources on and off, grants process access and starts sign-in.
 
 ## Repository Layout

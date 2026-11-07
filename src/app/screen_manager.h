@@ -28,6 +28,7 @@ public:
     void request_page(model::AppPage page);
     void flush_requested_page();
     bool handle_key(std::uint32_t key, bool long_pressed);
+    bool text_input_active() const;
     lv_obj_t* current_screen() const;
 
 private:

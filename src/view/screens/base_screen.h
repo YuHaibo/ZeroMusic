@@ -36,6 +36,10 @@ public:
     // handle_key reports whether the screen used the key.
     virtual bool handle_key(std::uint32_t key, bool long_pressed);
 
+    // text_input_active is true while a field takes letters, so the app sends
+    // F/Z/X/C as text rather than as the arrows they stand for in navigation.
+    virtual bool text_input_active() const { return false; }
+
 protected:
     virtual void build_content(lv_obj_t* content) = 0;
 

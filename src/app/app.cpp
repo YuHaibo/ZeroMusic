@@ -185,7 +185,7 @@ private:
         }
 
         // The transport works on every page, as on the official Music.
-        if (!long_pressed) {
+        if (!long_pressed && !screens_.text_input_active()) {
             switch (key) {
                 case '4':
                     view_model_.show_page(model::AppPage::NowPlaying);
@@ -214,7 +214,32 @@ private:
             }
         }
 
-        return screens_.handle_key(key, long_pressed);
+        // F/Z/X/C are the arrows without holding Fn, except while a field
+        // takes text: there they are the letters.
+        uint32_t screen_key = key;
+        if (!long_pressed && !screens_.text_input_active()) {
+            switch (key) {
+                case 'f':
+                case 'F':
+                    screen_key = LV_KEY_UP;
+                    break;
+                case 'x':
+                case 'X':
+                    screen_key = LV_KEY_DOWN;
+                    break;
+                case 'z':
+                case 'Z':
+                    screen_key = LV_KEY_LEFT;
+                    break;
+                case 'c':
+                case 'C':
+                    screen_key = LV_KEY_RIGHT;
+                    break;
+                default:
+                    break;
+            }
+        }
+        return screens_.handle_key(screen_key, long_pressed);
     }
 
     void handle_release(uint32_t) {}

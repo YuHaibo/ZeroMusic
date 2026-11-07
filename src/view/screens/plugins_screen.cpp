@@ -32,6 +32,10 @@ void settings_changed(lv_observer_t* observer, lv_subject_t*) {
 
 } // namespace
 
+bool PluginsScreen::text_input_active() const {
+    return mode_ == Mode::Settings && editing_;
+}
+
 void PluginsScreen::build_content(lv_obj_t* content) {
     screen_content_ = content;
     mode_ = Mode::List;
