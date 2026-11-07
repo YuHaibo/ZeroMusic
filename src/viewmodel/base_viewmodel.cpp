@@ -931,9 +931,10 @@ void BaseViewModel::load_cover(const std::string& url, int size) {
         return;
     }
     cover_url_ = url;
+    const int gen = ++cover_gen_;
     client_.call("image.get", ipc::Json{{"url", url}, {"size", size}},
-                 [this](const ipc::Json& result, const std::string& code, const std::string& message) {
-        if (!code.empty()) {
+                 [this, gen](const ipc::Json& result, const std::string& code, const std::string& message) {
+        if (!code.empty() || gen != cover_gen_) {
             return;
         }
         const std::string data = result.value("data", "");
@@ -1101,13 +1102,17 @@ void BaseViewModel::apply_state(const ipc::Json& state) {
         image_url = track["album"].value("imageUrl", "");
     }
     const std::string new_id = track.is_object() ? track.value("id", "") : "";
-    if (!image_url.empty() && image_url != cover_url_) {
-        load_cover(image_url);
-    }
-    else if (new_id != track_id_ && image_url.empty()) {
+    if (new_id != track_id_) {
+        // Never show the last track's cover while this one's loads.
         cover_data_.clear();
+        cover_width_ = 0;
+        cover_height_ = 0;
         cover_url_.clear();
+        ++cover_gen_;
         cover_revision_subject_.set(cover_revision_subject_.value() + 1);
+    }
+    if (!image_url.empty() && (image_url != cover_url_ || cover_data_.empty())) {
+        load_cover(image_url);
     }
     if (!new_id.empty() && new_id != track_id_) {
         lyrics_.clear();

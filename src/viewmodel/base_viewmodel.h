@@ -255,6 +255,7 @@ private:
     CollectionKind collection_kind_ = CollectionKind::Albums;
     std::vector<std::uint8_t> cover_data_;
     int cover_width_ = 0;
+    int cover_gen_ = 0;
     int cover_height_ = 0;
     std::string cover_url_;
 

@@ -10,6 +10,8 @@
 #include "bindings.h"
 #include "theme.h"
 
+#include <algorithm>
+
 namespace screen {
 namespace {
 
@@ -19,13 +21,6 @@ void progress_observer(lv_observer_t* observer, lv_subject_t* subject) {
         return;
     }
     lv_bar_set_value(bar, lv_subject_get_int(subject), LV_ANIM_OFF);
-}
-
-void cover_changed(lv_observer_t* observer, lv_subject_t*) {
-    auto* screen = static_cast<NowPlayingScreen*>(lv_observer_get_user_data(observer));
-    if (screen) {
-        screen->handle_key(0, false);
-    }
 }
 
 void lyrics_changed(lv_observer_t* observer, lv_subject_t*) {
@@ -52,62 +47,58 @@ void NowPlayingScreen::build_content(lv_obj_t* content) {
     auto* big = assets().load_standard_font(16);
     auto* body = assets().load_standard_font(12);
     auto* caption = assets().load_standard_font(10);
+    auto* lyric_font = assets().load_standard_font(11);
 
-    auto* cover = lv_obj_create(content);
-    lv_obj_remove_style_all(cover);
-    lv_obj_set_size(cover, 78, 78);
-    lv_obj_align(cover, LV_ALIGN_TOP_LEFT, 10, 8);
-    lv_obj_set_style_radius(cover, 6, 0);
-    lv_obj_set_style_bg_opa(cover, LV_OPA_COVER, 0);
-    lv_obj_set_style_bg_color(cover, colors.primary, 0);
-    lv_obj_set_style_bg_grad_color(cover, colors.surface, 0);
-    lv_obj_set_style_bg_grad_dir(cover, LV_GRAD_DIR_VER, 0);
-    lv_obj_clear_flag(cover, LV_OBJ_FLAG_SCROLLABLE);
-    cover_initials_ = lv_label_create(cover);
-    lv_label_set_text(cover_initials_, "ZM");
-    lv_obj_set_style_text_font(cover_initials_, big ? big : &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(cover_initials_, lv_color_hex(0x101014), 0);
-    lv_obj_center(cover_initials_);
-
-    cover_image_ = lv_image_create(cover);
-    lv_obj_set_size(cover_image_, 78, 78);
-    lv_obj_center(cover_image_);
-    lv_obj_add_flag(cover_image_, LV_OBJ_FLAG_HIDDEN);
+    cover_ = std::make_unique<view::widgets::CoverView>(content, view_model(), assets(), 100);
+    cover_->build();
+    lv_obj_align(cover_->root(), LV_ALIGN_TOP_LEFT, 8, 6);
 
     auto* title = lv_label_create(content);
     lv_label_bind_text(title, view_model().track_title_subject(), nullptr);
     lv_obj_set_style_text_font(title, big ? big : &lv_font_montserrat_16, 0);
     lv_label_set_long_mode(title, LV_LABEL_LONG_DOT);
-    lv_obj_set_width(title, 216);
-    lv_obj_align(title, LV_ALIGN_TOP_LEFT, 98, 10);
+    lv_obj_set_width(title, 194);
+    lv_obj_align(title, LV_ALIGN_TOP_LEFT, 118, 6);
     lv_obj_set_style_text_color(title, colors.text, 0);
 
     auto* artist = lv_label_create(content);
     lv_label_bind_text(artist, view_model().track_artist_subject(), nullptr);
     lv_obj_set_style_text_font(artist, body ? body : &lv_font_montserrat_12, 0);
     lv_label_set_long_mode(artist, LV_LABEL_LONG_DOT);
-    lv_obj_set_width(artist, 216);
-    lv_obj_align(artist, LV_ALIGN_TOP_LEFT, 98, 32);
+    lv_obj_set_width(artist, 194);
+    lv_obj_align(artist, LV_ALIGN_TOP_LEFT, 118, 30);
     lv_obj_set_style_text_color(artist, colors.text, 0);
 
     auto* album = lv_label_create(content);
     lv_label_bind_text(album, view_model().track_album_subject(), nullptr);
     lv_obj_set_style_text_font(album, caption ? caption : &lv_font_montserrat_10, 0);
     lv_label_set_long_mode(album, LV_LABEL_LONG_DOT);
-    lv_obj_set_width(album, 216);
-    lv_obj_align(album, LV_ALIGN_TOP_LEFT, 98, 50);
+    lv_obj_set_width(album, 194);
+    lv_obj_align(album, LV_ALIGN_TOP_LEFT, 118, 46);
     lv_obj_set_style_text_color(album, colors.text_disabled, 0);
 
     state_label_ = lv_label_create(content);
     reactive::bind_bool_text(state_label_, view_model().playing_subject(), "Paused", "Playing");
     lv_obj_set_style_text_font(state_label_, caption ? caption : &lv_font_montserrat_10, 0);
-    lv_obj_align(state_label_, LV_ALIGN_TOP_LEFT, 98, 66);
+    lv_obj_align(state_label_, LV_ALIGN_TOP_LEFT, 118, 62);
     lv_obj_set_style_text_color(state_label_, colors.primary, 0);
+
+    auto* like = lv_label_create(content);
+    reactive::bind_bool_text(like, view_model().liked_subject(), "LIKE", "LIKED");
+    lv_obj_set_style_text_font(like, caption ? caption : &lv_font_montserrat_10, 0);
+    lv_obj_align(like, LV_ALIGN_TOP_RIGHT, -10, 62);
+    lv_obj_set_style_text_color(like, colors.primary, 0);
+
+    volume_ = lv_label_create(content);
+    lv_obj_set_style_text_font(volume_, caption ? caption : &lv_font_montserrat_10, 0);
+    lv_obj_align(volume_, LV_ALIGN_TOP_RIGHT, -10, 74);
+    lv_obj_set_style_text_color(volume_, colors.text_disabled, 0);
+    lv_subject_add_observer_obj(view_model().volume_subject(), volume_changed, volume_, nullptr);
 
     progress_ = lv_bar_create(content);
     lv_obj_remove_style_all(progress_);
-    lv_obj_set_size(progress_, 300, 4);
-    lv_obj_align(progress_, LV_ALIGN_TOP_MID, 0, 86);
+    lv_obj_set_size(progress_, 194, 4);
+    lv_obj_align(progress_, LV_ALIGN_TOP_LEFT, 118, 88);
     lv_obj_set_style_radius(progress_, 2, 0);
     lv_obj_set_style_bg_opa(progress_, LV_OPA_COVER, 0);
     lv_obj_set_style_bg_color(progress_, colors.border, LV_PART_MAIN);
@@ -120,71 +111,27 @@ void NowPlayingScreen::build_content(lv_obj_t* content) {
     auto* position = lv_label_create(content);
     lv_label_bind_text(position, view_model().position_text_subject(), nullptr);
     lv_obj_set_style_text_font(position, caption ? caption : &lv_font_montserrat_10, 0);
-    lv_obj_align(position, LV_ALIGN_TOP_LEFT, 10, 92);
+    lv_obj_align(position, LV_ALIGN_TOP_LEFT, 118, 94);
     lv_obj_set_style_text_color(position, colors.text_disabled, 0);
 
     auto* duration = lv_label_create(content);
     lv_label_bind_text(duration, view_model().duration_text_subject(), nullptr);
     lv_obj_set_style_text_font(duration, caption ? caption : &lv_font_montserrat_10, 0);
-    lv_obj_align(duration, LV_ALIGN_TOP_RIGHT, -10, 92);
+    lv_obj_align(duration, LV_ALIGN_TOP_RIGHT, -10, 94);
     lv_obj_set_style_text_color(duration, colors.text_disabled, 0);
 
-    auto* like = lv_label_create(content);
-    reactive::bind_bool_text(like, view_model().liked_subject(), "LIKE", "LIKED");
-    lv_obj_set_style_text_font(like, caption ? caption : &lv_font_montserrat_10, 0);
-    lv_obj_align(like, LV_ALIGN_TOP_RIGHT, -10, 66);
-    lv_obj_set_style_text_color(like, colors.primary, 0);
-
-    volume_ = lv_label_create(content);
-    lv_obj_set_style_text_font(volume_, caption ? caption : &lv_font_montserrat_10, 0);
-    lv_obj_align(volume_, LV_ALIGN_TOP_RIGHT, -10, 76);
-    lv_obj_set_style_text_color(volume_, colors.text_disabled, 0);
-    lv_subject_add_observer_obj(view_model().volume_subject(), volume_changed, volume_, nullptr);
-
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 2; ++i) {
         lyric_lines_[i] = lv_label_create(content);
-        lv_obj_set_width(lyric_lines_[i], 300);
+        lv_obj_set_width(lyric_lines_[i], 304);
         lv_label_set_long_mode(lyric_lines_[i], LV_LABEL_LONG_DOT);
-        lv_obj_set_style_text_font(lyric_lines_[i], caption ? caption : &lv_font_montserrat_10, 0);
-        lv_obj_align(lyric_lines_[i], LV_ALIGN_TOP_LEFT, 10, 106 + i * 13);
+        lv_obj_set_style_text_font(lyric_lines_[i], lyric_font ? lyric_font : &lv_font_montserrat_10, 0);
+        lv_obj_align(lyric_lines_[i], LV_ALIGN_TOP_LEFT, 8, 108 + i * 15);
         lv_obj_set_style_text_color(lyric_lines_[i], colors.text_disabled, 0);
     }
 
-    lv_subject_add_observer_obj(view_model().cover_revision_subject(), cover_changed, content, this);
     lv_subject_add_observer_obj(view_model().lyrics_revision_subject(), lyrics_changed, content, this);
     lv_subject_add_observer_obj(view_model().progress_subject(), lyrics_changed, content, this);
-    refresh_cover();
     refresh_lyrics();
-
-}
-
-void NowPlayingScreen::refresh_cover() {
-    const auto& data = view_model().cover_data();
-    if (data.empty() || view_model().cover_width() <= 0) {
-        if (cover_image_) {
-            lv_obj_add_flag(cover_image_, LV_OBJ_FLAG_HIDDEN);
-        }
-        if (cover_initials_) {
-            lv_obj_remove_flag(cover_initials_, LV_OBJ_FLAG_HIDDEN);
-        }
-        return;
-    }
-    auto cover = std::make_unique<Cover>();
-    cover->data = data;
-    cover->dsc.header.magic = LV_IMAGE_HEADER_MAGIC;
-    cover->dsc.header.cf = LV_COLOR_FORMAT_RGB565;
-    cover->dsc.header.w = view_model().cover_width();
-    cover->dsc.header.h = view_model().cover_height();
-    cover->dsc.header.stride = view_model().cover_width() * 2;
-    cover->dsc.data_size = static_cast<std::uint32_t>(cover->data.size());
-    cover->dsc.data = cover->data.data();
-    lv_image_set_src(cover_image_, &cover->dsc);
-    lv_obj_remove_flag(cover_image_, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_add_flag(cover_initials_, LV_OBJ_FLAG_HIDDEN);
-    covers_.push_back(std::move(cover));
-    if (covers_.size() > 8) {
-        covers_.erase(covers_.begin());
-    }
 }
 
 void NowPlayingScreen::refresh_lyrics() {
@@ -194,9 +141,7 @@ void NowPlayingScreen::refresh_lyrics() {
         lv_obj_set_style_text_color(lyric_lines_[0],
                                     view::palette(view_model().is_dark_mode()).text_disabled,
                                     0);
-        for (int i = 1; i < 3; ++i) {
-            lv_obj_add_flag(lyric_lines_[i], LV_OBJ_FLAG_HIDDEN);
-        }
+        lv_obj_add_flag(lyric_lines_[1], LV_OBJ_FLAG_HIDDEN);
         return;
     }
     const auto position = view_model().position_ms();
@@ -209,18 +154,18 @@ void NowPlayingScreen::refresh_lyrics() {
             break;
         }
     }
-    const int start = std::max(0, current - 1);
-    for (int i = 0; i < 3; ++i) {
-        const int index = start + i;
-        if (index >= static_cast<int>(lyrics.size())) {
-            lv_obj_add_flag(lyric_lines_[i], LV_OBJ_FLAG_HIDDEN);
-            continue;
-        }
-        lv_obj_remove_flag(lyric_lines_[i], LV_OBJ_FLAG_HIDDEN);
-        lv_label_set_text(lyric_lines_[i], lyrics[static_cast<std::size_t>(index)].text.c_str());
-        const bool on = index == current;
-        const auto colors = view::palette(view_model().is_dark_mode());
-        lv_obj_set_style_text_color(lyric_lines_[i], on ? colors.primary : colors.text_disabled, 0);
+    const auto colors = view::palette(view_model().is_dark_mode());
+    lv_obj_remove_flag(lyric_lines_[0], LV_OBJ_FLAG_HIDDEN);
+    lv_label_set_text(lyric_lines_[0], lyrics[static_cast<std::size_t>(current)].text.c_str());
+    lv_obj_set_style_text_color(lyric_lines_[0], colors.primary, 0);
+    const int next = current + 1;
+    if (next < static_cast<int>(lyrics.size())) {
+        lv_obj_remove_flag(lyric_lines_[1], LV_OBJ_FLAG_HIDDEN);
+        lv_label_set_text(lyric_lines_[1], lyrics[static_cast<std::size_t>(next)].text.c_str());
+        lv_obj_set_style_text_color(lyric_lines_[1], colors.text_disabled, 0);
+    }
+    else {
+        lv_obj_add_flag(lyric_lines_[1], LV_OBJ_FLAG_HIDDEN);
     }
 }
 
@@ -229,7 +174,6 @@ bool NowPlayingScreen::handle_key(std::uint32_t key, bool long_pressed) {
         return false;
     }
     if (key == 0) {
-        refresh_cover();
         refresh_lyrics();
         return true;
     }

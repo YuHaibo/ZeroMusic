@@ -7,12 +7,15 @@
 #pragma once
 
 #include "base_screen.h"
+#include "cover_view.h"
 
+#include <memory>
 #include <vector>
 
 namespace screen {
 
-// HomeScreen is the way in: what plays, and the pages the listener can open.
+// HomeScreen is the way in: the current cover and source, and the pages the
+// listener can open.
 class HomeScreen : public BaseScreen {
 public:
     using BaseScreen::BaseScreen;
@@ -27,6 +30,7 @@ private:
     void activate();
 
     std::vector<lv_obj_t*> rows_;
+    std::unique_ptr<view::widgets::CoverView> cover_;
     int selected_ = 0;
     lv_obj_t* status_{nullptr};
 };

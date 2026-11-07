@@ -101,7 +101,14 @@ cmake --build build/dev -j8
 
 - Home 增加 Recent 页，读取当前源的 `recent`。
 - Now Playing 按 `L` 喜欢/取消喜欢当前曲目，状态来自 `isLiked`。
-- 截图：[Home](../screenshot/zero-music-home.png)。
+- Home 左侧改为当前专辑封面（100 px），封面下显示当前插件与状态；
+  菜单在右侧。
+- Now Playing 重排：大封面在左，右侧标题/艺人/专辑/状态/LIKE/VOL/进度，
+  底部两行歌词；不再纵向拥挤。
+- 换曲时先清空封面并显示默认 `ZM`，再异步加载新图；旧请求用 generation
+  丢弃，避免显示上一首封面。
+- 截图：[Home](../screenshot/zero-music-home.png) /
+  [Now Playing](../screenshot/zero-music-now-playing.png)。
 - Queue 页按播放顺序显示队列，Enter 跳转，Backspace 删除。
 - Lyrics 页显示当前行及前后行，自动跟随播放，上下可手动滚动；core 在歌词
   加载后补发一次完整 `player.state`。
@@ -198,7 +205,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 已验证产物（2026-11-07）：
 
 - `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
-  `d1cd5faff70201e620e2e8faa06c9ac26a38283a6e02e7d867c5b8921c76908f`；
+  `2bc9cff08a61add7c0a38f838be717b825e87679ccf296aa82fb029db3d95b6a`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与

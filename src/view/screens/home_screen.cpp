@@ -33,53 +33,42 @@ constexpr std::array<Entry, 7> kEntries = {{
 } // namespace
 
 void HomeScreen::build_content(lv_obj_t* content) {
-    auto* side = lv_obj_create(content);
-    lv_obj_remove_style_all(side);
-    lv_obj_set_size(side, 132, LV_PCT(100));
-    lv_obj_align(side, LV_ALIGN_LEFT_MID, 0, 0);
-    lv_obj_set_style_pad_left(side, 12, 0);
-    lv_obj_set_style_pad_top(side, 8, 0);
-    lv_obj_set_flex_flow(side, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_align(side, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
-    lv_obj_set_style_pad_row(side, 3, 0);
-    lv_obj_clear_flag(side, LV_OBJ_FLAG_SCROLLABLE);
+    const auto colors = view::palette(view_model().is_dark_mode());
+    auto* small = assets().load_standard_font(10);
 
-    auto* mark = lv_label_create(side);
-    lv_label_set_text(mark, "ZERO");
-    auto* big = assets().load_standard_font(22);
-    lv_obj_set_style_text_font(mark, big ? big : &lv_font_montserrat_20, 0);
-    reactive::bind_theme(mark, view_model().dark_mode_subject(), reactive::ThemeRole::Text);
+    cover_ = std::make_unique<view::widgets::CoverView>(content, view_model(), assets(), 100);
+    cover_->build();
+    lv_obj_align(cover_->root(), LV_ALIGN_TOP_LEFT, 8, 6);
 
-    auto* name = lv_label_create(side);
-    lv_label_set_text(name, "MUSIC");
-    auto* small = assets().load_standard_font(12);
-    lv_obj_set_style_text_font(name, small ? small : &lv_font_montserrat_12, 0);
-    reactive::bind_theme(name, view_model().dark_mode_subject(), reactive::ThemeRole::Text);
-
-    auto* source = lv_label_create(side);
+    auto* source = lv_label_create(content);
     lv_label_bind_text(source, view_model().source_subject(), nullptr);
-    lv_obj_set_style_text_font(source, small ? small : &lv_font_montserrat_12, 0);
+    lv_obj_set_width(source, 104);
+    lv_obj_set_style_text_align(source, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_text_font(source, small ? small : &lv_font_montserrat_10, 0);
     lv_label_set_long_mode(source, LV_LABEL_LONG_DOT);
-    lv_obj_set_width(source, 116);
-    reactive::bind_theme(source, view_model().dark_mode_subject(), reactive::ThemeRole::Text);
+    lv_obj_align(source, LV_ALIGN_TOP_LEFT, 6, 110);
+    lv_obj_set_style_text_color(source, colors.primary, 0);
 
-    status_ = lv_label_create(side);
+    status_ = lv_label_create(content);
     lv_label_bind_text(status_, view_model().status_subject(), nullptr);
-    lv_obj_set_style_text_font(status_, small ? small : &lv_font_montserrat_12, 0);
+    lv_obj_set_width(status_, 104);
+    lv_obj_set_style_text_align(status_, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_style_text_font(status_, small ? small : &lv_font_montserrat_10, 0);
     lv_label_set_long_mode(status_, LV_LABEL_LONG_DOT);
-    lv_obj_set_width(status_, 116);
-    lv_obj_set_style_text_color(status_, view::palette(view_model().is_dark_mode()).text_disabled, 0);
+    lv_obj_align(status_, LV_ALIGN_TOP_LEFT, 6, 124);
+    lv_obj_set_style_text_color(status_, colors.text_disabled, 0);
 
     auto* menu = lv_obj_create(content);
     lv_obj_remove_style_all(menu);
-    lv_obj_set_size(menu, 180, LV_PCT(100));
+    lv_obj_set_size(menu, 190, LV_PCT(100));
     lv_obj_align(menu, LV_ALIGN_RIGHT_MID, 0, 0);
-    lv_obj_set_style_pad_all(menu, 5, 0);
-    lv_obj_set_style_pad_left(menu, 4, 0);
+    lv_obj_set_style_pad_all(menu, 4, 0);
+    lv_obj_set_style_pad_left(menu, 2, 0);
     lv_obj_set_flex_flow(menu, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_row(menu, 1, 0);
     lv_obj_clear_flag(menu, LV_OBJ_FLAG_SCROLLABLE);
 
+    auto* text = assets().load_standard_font(12);
     for (const auto& entry : kEntries) {
         auto* row = lv_obj_create(menu);
         lv_obj_remove_style_all(row);
@@ -89,8 +78,7 @@ void HomeScreen::build_content(lv_obj_t* content) {
         lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
         auto* label = lv_label_create(row);
         lv_label_set_text(label, entry.label);
-        lv_obj_set_style_text_font(label, small ? small : &lv_font_montserrat_12, 0);
-        lv_obj_center(label);
+        lv_obj_set_style_text_font(label, text ? text : &lv_font_montserrat_12, 0);
         lv_obj_align(label, LV_ALIGN_LEFT_MID, 0, 0);
         reactive::bind_theme(label, view_model().dark_mode_subject(), reactive::ThemeRole::Text);
         rows_.push_back(row);
