@@ -1,6 +1,7 @@
 package player
 
 import (
+	"encoding/json"
 	"math"
 	"os"
 	"path/filepath"
@@ -322,4 +323,31 @@ func TestRemoveOther(t *testing.T) {
 	if len(p.order) != 2 || p.order[0] != 0 || p.order[1] != 1 {
 		t.Fatalf("order: %v", p.order)
 	}
+}
+
+// A song kept on disk plays without asking its source, which may be gone.
+func TestCachedSongNeedsNoSource(t *testing.T) {
+	data, err := os.ReadFile("testdata/seek.mp3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := t.TempDir()
+	st := &music.Stream{URL: "https://example.invalid/song.mp3", Type: "mp3", Size: int64(len(data))}
+	key := cacheKey("src", "1", "high")
+	meta, _ := json.Marshal(st)
+	if err := os.WriteFile(filepath.Join(dir, key+".json"), meta, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, key+".mp3"), data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	p := &Player{Cache: NewCache(dir, 1<<20)}
+	info, s, err := p.open(nil, music.Track{ID: "1", Source: "src", Duration: 1000}, "high", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info == nil || s == nil {
+		t.Fatal("no stream for a kept song")
+	}
+	s.Close()
 }

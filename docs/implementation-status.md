@@ -113,8 +113,10 @@ cmake --build build/dev -j8
 - Lyrics 页显示当前行及前后行，自动跟随播放，上下可手动滚动；core 在歌词
   加载后补发一次完整 `player.state`。
 - Settings 页可调音量、音质、缓存、语言，并触发重扫；音源只在 Plugins 页切换。
-  缓存默认 3 GB，可调 0/512 MB/1/2/3/4 GB；播放过的歌曲缓存在本地，
-  源仍在时断网也能用缓存播放。
+  缓存默认 3 GB，可调 0/512 MB/1/2/3/4 GB；播放过的歌曲保存在
+  `$XDG_DATA_HOME/zero-music/songs`（不随 cache 清理丢失），下次直接读本地。
+  缓存查找在源请求之前，命中时不调用插件 `stream`；源已删除时也可从缓存播放
+  （播放器层）。
 - Plugins 页列出插件；Enter 直接选用（不再显示 On/Off），当前源行显示
   `Using`；支持 `Q` 列表内筛选、`D` 两次删除、`G` 授权 process、
   `S` 登录、`E` 设置；声明了 `signIn` 的插件显示 `Login *`。
@@ -205,7 +207,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 已验证产物（2026-11-07）：
 
 - `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
-  `2bc9cff08a61add7c0a38f838be717b825e87679ccf296aa82fb029db3d95b6a`；
+  `673ac991f996c4c47ad4826626352cb463dee47b1a59dc82022109f4efb450e8`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与

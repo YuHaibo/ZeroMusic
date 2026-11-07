@@ -66,8 +66,9 @@ func (d Dirs) PluginsDir() string { return filepath.Join(d.Data, "plugins") }
 // PluginDataDir holds what plugins keep for themselves.
 func (d Dirs) PluginDataDir() string { return filepath.Join(d.Data, "plugin-data") }
 
-// SongCache is where downloads are kept.
-func (d Dirs) SongCache() string { return filepath.Join(d.Cache, "songs") }
+// SongCache is where played songs are kept. Under data, not cache, so a
+// cache cleaner or a reboot doesn't take the listener's music away.
+func (d Dirs) SongCache() string { return filepath.Join(d.Data, "songs") }
 
 // CoverCache is where covers decoded by the image service are kept, if any.
 func (d Dirs) CoverCache() string { return filepath.Join(d.Cache, "covers") }
