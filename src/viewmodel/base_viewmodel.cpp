@@ -115,6 +115,8 @@ BaseViewModel::BaseViewModel()
       prompt_qr_subject_(""),
       prompt_text_subject_("Start sign-in from Plugins"),
       cover_revision_subject_(0),
+      collection_revision_subject_(0),
+      sources_revision_subject_(0),
       progress_subject_(0),
       playing_subject_(false),
       connected_subject_(false),
@@ -125,6 +127,9 @@ BaseViewModel::BaseViewModel()
       dark_mode_subject_(model_.dark_mode()),
       current_page_subject_(page_to_int(model_.current_page())),
       quit_requested_subject_(false) {
+    if (const char* source = std::getenv("ZERO_MUSIC_SOURCE")) {
+        preferred_source_ = source;
+    }
     if (const char* start = std::getenv("ZERO_MUSIC_START_PAGE"); start) {
         const std::string page(start);
         if (page == "now-playing") {
@@ -205,6 +210,8 @@ lv_subject_t* BaseViewModel::plugins_revision_subject() { return plugins_revisio
 lv_subject_t* BaseViewModel::prompt_qr_subject() { return prompt_qr_subject_.native(); }
 lv_subject_t* BaseViewModel::prompt_text_subject() { return prompt_text_subject_.native(); }
 lv_subject_t* BaseViewModel::cover_revision_subject() { return cover_revision_subject_.native(); }
+lv_subject_t* BaseViewModel::collection_revision_subject() { return collection_revision_subject_.native(); }
+lv_subject_t* BaseViewModel::sources_revision_subject() { return sources_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::progress_subject() { return progress_subject_.native(); }
 lv_subject_t* BaseViewModel::playing_subject() { return playing_subject_.native(); }
 lv_subject_t* BaseViewModel::connected_subject() { return connected_subject_.native(); }
@@ -328,6 +335,113 @@ void BaseViewModel::search(const std::string& query) {
         }
         apply_tracks(result.contains("tracks") ? result["tracks"] : ipc::Json::array(),
                      "Results: " + query);
+    });
+}
+
+void BaseViewModel::load_collection(CollectionKind kind) {
+    collection_kind_ = kind;
+    const std::string source = active_source_;
+    if (kind == CollectionKind::Playlists) {
+        client_.call("source.call",
+                     ipc::Json{{"source", source}, {"method", "playlists"}, {"params", ipc::Json::object()}},
+                     [this](const ipc::Json& result, const std::string& code, const std::string& message) {
+            if (!code.empty()) {
+                fail(code, message);
+                return;
+            }
+            std::vector<CollectionItem> items;
+            if (result.is_array()) {
+                for (const auto& playlist : result) {
+                    CollectionItem item;
+                    item.id = playlist.value("id", "");
+                    item.title = playlist.value("name", "");
+                    const int count = playlist.value("trackCount", 0);
+                    if (count > 0) {
+                        item.subtitle = std::to_string(count) + " songs";
+                    }
+                    items.push_back(std::move(item));
+                }
+            }
+            collection_ = std::move(items);
+            collection_revision_subject_.set(collection_revision_subject_.value() + 1);
+        });
+        return;
+    }
+    const char* page = kind == CollectionKind::Albums ? "albums" : "artists";
+    client_.call("source.call",
+                 ipc::Json{{"source", source}, {"method", "browse"}, {"params", ipc::Json{{"page", page}}}},
+                 [this, kind](const ipc::Json& result, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        std::vector<CollectionItem> items;
+        if (result.contains("sections") && result["sections"].is_array()) {
+            for (const auto& section : result["sections"]) {
+                const char* key = kind == CollectionKind::Albums ? "albums" : "artists";
+                if (!section.contains(key) || !section[key].is_array()) {
+                    continue;
+                }
+                for (const auto& entry : section[key]) {
+                    CollectionItem item;
+                    item.id = entry.value("id", "");
+                    item.title = entry.value("name", "");
+                    if (kind == CollectionKind::Albums) {
+                        item.subtitle = join_artists(entry);
+                    }
+                    items.push_back(std::move(item));
+                }
+            }
+        }
+        collection_ = std::move(items);
+        collection_revision_subject_.set(collection_revision_subject_.value() + 1);
+    });
+}
+
+void BaseViewModel::open_collection_item(std::size_t index) {
+    if (index >= collection_.size()) {
+        return;
+    }
+    const std::string source = active_source_;
+    const std::string id = collection_[index].id;
+    const CollectionKind kind = collection_kind_;
+    const char* method = kind == CollectionKind::Albums ? "album"
+                         : kind == CollectionKind::Artists ? "artist"
+                                                           : "playlist";
+    client_.call("source.call",
+                 ipc::Json{{"source", source}, {"method", method}, {"params", ipc::Json{{"id", id}}}},
+                 [this, kind, id](const ipc::Json& result, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        std::string title;
+        if (kind == CollectionKind::Albums) {
+            const auto& album = result["album"];
+            title = album.value("name", "Album");
+            const std::string artists = join_artists(album);
+            if (!artists.empty()) {
+                title += " - " + artists;
+            }
+        }
+        else if (kind == CollectionKind::Artists) {
+            title = result["artist"].value("name", "Artist");
+        }
+        else {
+            title = result.value("name", "Playlist");
+        }
+        std::vector<TrackItem> items;
+        const char* key = kind == CollectionKind::Artists ? "tracks" : "tracks";
+        if (result.contains(key) && result[key].is_array()) {
+            for (const auto& track : result[key]) {
+                items.push_back(parse_track(track, active_source_));
+            }
+        }
+        tracks_ = std::move(items);
+        list_title_ = title;
+        list_title_subject_.set(list_title_.c_str());
+        list_revision_subject_.set(list_revision_subject_.value() + 1);
+        show_page(model::AppPage::Detail);
     });
 }
 
@@ -738,17 +852,25 @@ void BaseViewModel::apply_sources(const ipc::Json& sources) {
         }
         const std::string id = source.value("id", "");
         const std::string name = source.value("name", id);
-        if (!chose) {
+        const bool preferred = !preferred_source_.empty() && id == preferred_source_;
+        if (preferred || (!chose && preferred_source_.empty())) {
             active_source_ = id;
             model_.set_source_name(name);
             source_subject_.set(name.c_str());
             chose = true;
         }
-        if (id == active_source_) {
-            model_.set_source_name(name);
-            source_subject_.set(name.c_str());
+    }
+    if (!chose) {
+        for (const auto& source : sources) {
+            if (source.value("enabled", true)) {
+                active_source_ = source.value("id", "");
+                model_.set_source_name(source.value("name", active_source_));
+                source_subject_.set(model_.source_name().c_str());
+                break;
+            }
         }
     }
+    sources_revision_subject_.set(sources_revision_subject_.value() + 1);
 }
 
 void BaseViewModel::apply_browse(const ipc::Json& browse) {

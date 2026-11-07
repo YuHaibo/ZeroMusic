@@ -177,7 +177,7 @@ private:
                 toast_->hide();
                 view_model_.request_quit();
             }
-            else {
+            else if (!screens_.handle_key(key, false)) {
                 view_model_.go_back();
             }
             return true;
@@ -353,6 +353,10 @@ int Application::run(const std::string& socket_path) {
 
     const char* screenshot_after = std::getenv("ZERO_MUSIC_SCREENSHOT");
     const bool screenshot_exit = std::getenv("ZERO_MUSIC_SCREENSHOT_EXIT") != nullptr;
+    int screenshot_frames = 80;
+    if (const char* frames = std::getenv("ZERO_MUSIC_SCREENSHOT_FRAMES")) {
+        screenshot_frames = std::max(1, std::atoi(frames));
+    }
     bool screenshot_taken = false;
     int frames = 0;
     while (running
@@ -362,7 +366,7 @@ int Application::run(const std::string& socket_path) {
     ) {
         lv_timer_handler();
         lv_delay_ms(5);
-        if (screenshot_after && !screenshot_taken && ++frames > 80) {
+        if (screenshot_after && !screenshot_taken && ++frames > screenshot_frames) {
             screenshot_taken = true;
             const auto shot = platform::screenshot::capture_active_screen();
             if (shot.success) {

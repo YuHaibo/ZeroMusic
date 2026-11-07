@@ -29,6 +29,20 @@ struct TrackItem {
     ipc::Json json;
 };
 
+// CollectionKind is what a Browse list holds besides songs.
+enum class CollectionKind {
+    Albums,
+    Artists,
+    Playlists,
+};
+
+// CollectionItem is an album, artist or playlist row.
+struct CollectionItem {
+    std::string id;
+    std::string title;
+    std::string subtitle;
+};
+
 // PluginItem is a row of the plugin manager.
 struct PluginItem {
     std::string id;
@@ -125,6 +139,11 @@ public:
     // browse opens a source page, such as "songs"; search queries the active
     // source. Both fill tracks(), and bump list_revision() when they do.
     void browse(const std::string& page = "songs");
+    void load_collection(CollectionKind kind);
+    void open_collection_item(std::size_t index);
+    const std::vector<CollectionItem>& collection() const { return collection_; }
+    lv_subject_t* collection_revision_subject();
+    lv_subject_t* sources_revision_subject();
     void search(const std::string& query);
     const std::vector<TrackItem>& tracks() const { return tracks_; }
     std::size_t track_count() const { return tracks_.size(); }
@@ -165,6 +184,7 @@ private:
     ipc::Client client_;
     std::vector<model::AppPage> stack_;
     std::string active_source_ = "local";
+    std::string preferred_source_;
     std::int64_t position_ms_ = 0;
     int volume_ = 80;
     int repeat_ = 0;
@@ -182,6 +202,8 @@ private:
     std::vector<LyricItem> lyrics_;
     std::string track_id_;
     std::vector<PluginItem> plugins_;
+    std::vector<CollectionItem> collection_;
+    CollectionKind collection_kind_ = CollectionKind::Albums;
     std::vector<std::uint8_t> cover_data_;
     int cover_width_ = 0;
     int cover_height_ = 0;
@@ -207,6 +229,8 @@ private:
     reactive::StringSubject<512> prompt_qr_subject_;
     reactive::StringSubject<256> prompt_text_subject_;
     reactive::IntSubject cover_revision_subject_;
+    reactive::IntSubject collection_revision_subject_;
+    reactive::IntSubject sources_revision_subject_;
     reactive::IntSubject progress_subject_;
     reactive::BoolSubject playing_subject_;
     reactive::BoolSubject connected_subject_;

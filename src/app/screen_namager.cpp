@@ -7,6 +7,7 @@
 #include "screen_manager.h"
 
 #include "browse_screen.h"
+#include "detail_screen.h"
 #include "home_screen.h"
 #include "lyrics_screen.h"
 #include "message_screen.h"
@@ -132,6 +133,9 @@ void ScreenManager::flush_requested_page() {
             break;
         case model::AppPage::Lyrics:
             load_screen(std::make_unique<screen::LyricsScreen>(view_model_, assets_), requested_page_);
+            break;
+        case model::AppPage::Detail:
+            load_screen(std::make_unique<screen::DetailScreen>(view_model_, assets_), requested_page_);
             break;
         case model::AppPage::Settings:
             load_screen(std::make_unique<screen::SettingsScreen>(view_model_, assets_), requested_page_);

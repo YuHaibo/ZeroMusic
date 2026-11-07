@@ -117,7 +117,13 @@ cmake --build build/dev -j8
   （协议里图片用 base64 JSON，未走二进制帧；尺寸小，先这样。）
 - 截图更新为带封面的 Now Playing。
 
-未做：专辑/艺人/歌单详情、插件设置表单、安装输入页。
+- Browse 增加 Songs/Albums/Artists/Playlists 入口；专辑、艺人、歌单列表
+  通过 `browse albums|artists|playlists` 与 `album|artist|playlist` 拉取。
+- Detail 页显示专辑/艺人/歌单名称与曲目，Enter 从选中曲目播放。
+- 截图：[Albums](../screenshot/zero-music-albums.png) /
+  [Detail](../screenshot/zero-music-detail.png)。
+
+未做：插件设置表单、安装输入页。
 v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 
 ### M6 构建与打包（已开始）
@@ -139,7 +145,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 
 ## 下一步
 
-1. **M4/M5 剩余**：Detail（专辑/艺人/歌单）、插件设置表单、安装输入页。
+1. **M5 剩余**：插件设置表单、安装输入页、源切换 UI。
 2. **M2 剩余**：`scan.progress`、图片磁盘缓存/并发限制。
 3. **M6 剩余**：cp0-cross 构建、`.deb` 实际打包与安装验证、
    APPLaunch 真机启动/退出、内存与帧率。
