@@ -215,8 +215,8 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 
 已验证产物（2026-11-07）：
 
-- `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
-  `fcbd8aa1c69be477ea06087fd5424bff8d677298487c398a26ef9a41d137e498`；
+- `dist/zero-music_1.0.0_rev1_arm64.deb`，约 8.0 MB，sha256
+  `7bec5df46544c266307648a665d789e6e9b2b654dbee6334744e2619aba54b1f`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与
