@@ -174,6 +174,11 @@ BaseViewModel::BaseViewModel()
             model_.set_current_page(model::AppPage::SignIn);
             current_page_subject_.set(page_to_int(model::AppPage::SignIn));
         }
+        else if (page == "install") {
+            stack_ = {model::AppPage::Install};
+            model_.set_current_page(model::AppPage::Install);
+            current_page_subject_.set(page_to_int(model::AppPage::Install));
+        }
     }
     client_.set_event_handler([this](const std::string& name, const ipc::Json& data) {
         on_event(name, data);
@@ -601,6 +606,23 @@ void BaseViewModel::grant_plugin(std::size_t index, bool on) {
     });
 }
 
+void BaseViewModel::install_plugin(const std::string& repo) {
+    if (repo.empty()) {
+        return;
+    }
+    status_subject_.set("Installing…");
+    model_.set_status("Installing…");
+    client_.call("plugin.install", ipc::Json{{"repo", repo}},
+                 [this](const ipc::Json&, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        status_subject_.set("Downloading plugin…");
+        model_.set_status("Downloading plugin…");
+    });
+}
+
 void BaseViewModel::load_plugin_settings(std::size_t index) {
     if (index >= plugins_.size()) {
         return;
@@ -728,6 +750,21 @@ void BaseViewModel::on_event(const std::string& name, const ipc::Json& data) {
         const std::string text = data.value("text", "");
         model_.set_status(text);
         status_subject_.set(text.c_str());
+    }
+    else if (name == "plugin.install") {
+        const std::string phase = data.value("phase", "");
+        if (phase == "done") {
+            const std::string text = "Installed " + data.value("id", "plugin");
+            status_subject_.set(text.c_str());
+            model_.set_status(text);
+            load_plugins();
+        }
+        else if (phase == "error") {
+            fail("unavailable", data.value("error", "install failed"));
+        }
+        else {
+            status_subject_.set("Downloading plugin…");
+        }
     }
     else if (name == "plugin.prompt") {
         const std::string text = data.value("text", "Scan the code to sign in");

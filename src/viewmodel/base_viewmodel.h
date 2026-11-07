@@ -137,6 +137,7 @@ public:
     void set_plugin_enabled(std::size_t index, bool on);
     void grant_plugin(std::size_t index, bool on);
     void sign_in_plugin(std::size_t index);
+    void install_plugin(const std::string& repo);
     void load_plugin_settings(std::size_t index);
     void save_plugin_setting(std::size_t index, const std::string& value);
     const std::vector<PluginSetting>& plugin_settings() const { return plugin_settings_; }

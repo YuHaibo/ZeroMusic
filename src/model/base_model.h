@@ -23,6 +23,7 @@ enum class AppPage {
     Plugins = 8,
     SignIn = 9,
     Help = 10,
+    Install = 11,
 };
 
 struct Track {

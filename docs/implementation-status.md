@@ -124,7 +124,11 @@ cmake --build build/dev -j8
 - 截图：[Albums](../screenshot/zero-music-albums.png) /
   [Detail](../screenshot/zero-music-detail.png)。
 
-未做：GitHub 安装输入页。
+- Plugins 页 `I` 打开 GitHub 安装输入页，输入 `owner/repo` 后 Enter 安装；
+  进度经 `plugin.install` 事件显示。
+- 截图：[Install](../screenshot/zero-music-install.png)。
+
+未做：账户页。
 v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 
 ### M6 构建与打包（已开始）
@@ -147,7 +151,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 
 ## 下一步
 
-1. **M5 剩余**：GitHub 安装输入页、账户展示。
+1. **M5 剩余**：账户展示。
 2. **M2 剩余**：`scan.progress`、图片磁盘缓存/并发限制。
 3. **M6 剩余**：cp0-cross 构建、`.deb` 实际打包与安装验证、
    APPLaunch 真机启动/退出、内存与帧率。
