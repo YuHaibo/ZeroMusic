@@ -112,7 +112,13 @@ cmake --build build/dev -j8
   [Settings](../screenshot/zero-music-settings.png) /
   [Plugins](../screenshot/zero-music-plugins.png)。
 
-未做：专辑/艺人/歌单详情、中文输入、封面图、插件设置表单、安装输入页。
+- core 新增 `image.get`：按 URL 抓取、解码、居中裁方、缩放到指定尺寸，
+  返回 base64 的 RGB565；内存缓存 16 MB。Now Playing 用它显示真实封面。
+  （协议里图片用 base64 JSON，未走二进制帧；尺寸小，先这样。）
+- 截图更新为带封面的 Now Playing。
+
+未做：专辑/艺人/歌单详情、插件设置表单、安装输入页。
+v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 
 ### M6 构建与打包（已开始）
 
@@ -133,9 +139,8 @@ cmake --build build/dev -j8
 
 ## 下一步
 
-1. **M4/M5 剩余**：Detail（专辑/艺人/歌单）、封面图、插件设置表单、
-   安装输入页、中文输入。
-2. **M2 剩余**：图片服务（fetch → RGB565 → 缓存）、`scan.progress`。
+1. **M4/M5 剩余**：Detail（专辑/艺人/歌单）、插件设置表单、安装输入页。
+2. **M2 剩余**：`scan.progress`、图片磁盘缓存/并发限制。
 3. **M6 剩余**：cp0-cross 构建、`.deb` 实际打包与安装验证、
    APPLaunch 真机启动/退出、内存与帧率。
 

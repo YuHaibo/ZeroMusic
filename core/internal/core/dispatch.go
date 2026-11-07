@@ -105,6 +105,9 @@ func (a *App) dispatch(method string, raw json.RawMessage) (any, error) {
 	case "quit":
 		time.AfterFunc(50*time.Millisecond, a.Quit)
 		return struct{}{}, nil
+	case "image.get":
+		// Fetching a cover can take a while; it doesn't touch the player.
+		return a.imageGet(raw)
 	case "source.call", "plugin.setSetting", "plugin.signIn", "plugin.signOut", "plugin.account", "plugin.settings":
 		// Sources may take seconds, or wait for the listener to scan a code;
 		// keep that off the loop that answers the player.

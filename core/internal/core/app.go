@@ -38,6 +38,7 @@ type App struct {
 	local       *local.Source
 	cache       *player.Cache
 	pl          *player.Player
+	images      *imageService
 	plugins     []*plugin.Plugin
 	pluginsByID map[string]*plugin.Plugin
 	srcMu       sync.RWMutex
@@ -91,6 +92,7 @@ func New(opts Options) (*App, error) {
 	i18n.SetLanguage(i18n.Resolve(settings.Language, []string{os.Getenv("LC_ALL"), os.Getenv("LANG")}))
 
 	a.cache = player.NewCache(dirs.SongCache(), int64(settings.CacheMB)<<20)
+	a.images = newImageService()
 	a.pl = player.New(func(fn func()) { a.post(fn) })
 	a.pl.Cache = a.cache
 	a.pl.Source = a.sourceOf

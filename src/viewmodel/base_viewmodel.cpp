@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <array>
+#include <vector>
 
 namespace viewmodel {
 namespace {
@@ -50,6 +52,33 @@ TrackItem parse_track(const ipc::Json& track, const std::string& source) {
     return item;
 }
 
+std::vector<std::uint8_t> from_base64(const std::string& text) {
+    static constexpr char table[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::array<int, 256> value{};
+    value.fill(-1);
+    for (int i = 0; i < 64; ++i) {
+        value[static_cast<unsigned char>(table[i])] = i;
+    }
+    std::vector<std::uint8_t> out;
+    out.reserve(text.size() * 3 / 4);
+    int bits = 0;
+    int count = 0;
+    for (const char c : text) {
+        const int v = value[static_cast<unsigned char>(c)];
+        if (v < 0) {
+            continue;
+        }
+        bits = (bits << 6) | v;
+        count += 6;
+        if (count >= 8) {
+            count -= 8;
+            out.push_back(static_cast<std::uint8_t>((bits >> count) & 0xff));
+        }
+    }
+    return out;
+}
+
 std::string format_time(std::int64_t ms) {
     if (ms < 0) {
         ms = 0;
@@ -85,6 +114,7 @@ BaseViewModel::BaseViewModel()
       plugins_revision_subject_(0),
       prompt_qr_subject_(""),
       prompt_text_subject_("Start sign-in from Plugins"),
+      cover_revision_subject_(0),
       progress_subject_(0),
       playing_subject_(false),
       connected_subject_(false),
@@ -174,6 +204,7 @@ lv_subject_t* BaseViewModel::language_subject() { return language_subject_.nativ
 lv_subject_t* BaseViewModel::plugins_revision_subject() { return plugins_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::prompt_qr_subject() { return prompt_qr_subject_.native(); }
 lv_subject_t* BaseViewModel::prompt_text_subject() { return prompt_text_subject_.native(); }
+lv_subject_t* BaseViewModel::cover_revision_subject() { return cover_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::progress_subject() { return progress_subject_.native(); }
 lv_subject_t* BaseViewModel::playing_subject() { return playing_subject_.native(); }
 lv_subject_t* BaseViewModel::connected_subject() { return connected_subject_.native(); }
@@ -464,6 +495,24 @@ void BaseViewModel::remove_queue_at(std::size_t order_index) {
     refresh();
 }
 
+void BaseViewModel::load_cover(const std::string& url, int size) {
+    if (url.empty()) {
+        return;
+    }
+    cover_url_ = url;
+    client_.call("image.get", ipc::Json{{"url", url}, {"size", size}},
+                 [this](const ipc::Json& result, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            return;
+        }
+        const std::string data = result.value("data", "");
+        cover_data_ = from_base64(data);
+        cover_width_ = result.value("width", 0);
+        cover_height_ = result.value("height", 0);
+        cover_revision_subject_.set(cover_revision_subject_.value() + 1);
+    });
+}
+
 void BaseViewModel::refresh() {
     client_.call("player.state", ipc::Json::object(), [this](const ipc::Json& result,
                                                              const std::string& code,
@@ -575,7 +624,19 @@ void BaseViewModel::apply_state(const ipc::Json& state) {
         shown.source = track.value("source", "");
         shown.duration_ms = track.value("duration", static_cast<std::int64_t>(0));
     }
+    std::string image_url;
+    if (track.is_object() && track.contains("album") && track["album"].is_object()) {
+        image_url = track["album"].value("imageUrl", "");
+    }
     const std::string new_id = track.is_object() ? track.value("id", "") : "";
+    if (!image_url.empty() && image_url != cover_url_) {
+        load_cover(image_url);
+    }
+    else if (new_id != track_id_ && image_url.empty()) {
+        cover_data_.clear();
+        cover_url_.clear();
+        cover_revision_subject_.set(cover_revision_subject_.value() + 1);
+    }
     if (!new_id.empty() && new_id != track_id_) {
         lyrics_.clear();
         lyrics_revision_subject_.set(lyrics_revision_subject_.value() + 1);

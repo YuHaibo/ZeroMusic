@@ -21,6 +21,13 @@ void progress_observer(lv_observer_t* observer, lv_subject_t* subject) {
     lv_bar_set_value(bar, lv_subject_get_int(subject), LV_ANIM_OFF);
 }
 
+void cover_changed(lv_observer_t* observer, lv_subject_t*) {
+    auto* screen = static_cast<NowPlayingScreen*>(lv_observer_get_user_data(observer));
+    if (screen) {
+        screen->handle_key(0, false);
+    }
+}
+
 } // namespace
 
 void NowPlayingScreen::build_content(lv_obj_t* content) {
@@ -39,11 +46,16 @@ void NowPlayingScreen::build_content(lv_obj_t* content) {
     lv_obj_set_style_bg_grad_color(cover, colors.surface, 0);
     lv_obj_set_style_bg_grad_dir(cover, LV_GRAD_DIR_VER, 0);
     lv_obj_clear_flag(cover, LV_OBJ_FLAG_SCROLLABLE);
-    auto* initials = lv_label_create(cover);
-    lv_label_set_text(initials, "ZM");
-    lv_obj_set_style_text_font(initials, big ? big : &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(initials, lv_color_hex(0x101014), 0);
-    lv_obj_center(initials);
+    cover_initials_ = lv_label_create(cover);
+    lv_label_set_text(cover_initials_, "ZM");
+    lv_obj_set_style_text_font(cover_initials_, big ? big : &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_color(cover_initials_, lv_color_hex(0x101014), 0);
+    lv_obj_center(cover_initials_);
+
+    cover_image_ = lv_image_create(cover);
+    lv_obj_set_size(cover_image_, 78, 78);
+    lv_obj_center(cover_image_);
+    lv_obj_add_flag(cover_image_, LV_OBJ_FLAG_HIDDEN);
 
     auto* title = lv_label_create(content);
     lv_label_bind_text(title, view_model().track_title_subject(), nullptr);
@@ -108,6 +120,9 @@ void NowPlayingScreen::build_content(lv_obj_t* content) {
     lv_obj_align(hints, LV_ALIGN_BOTTOM_MID, 0, -20);
     lv_obj_set_style_text_color(hints, colors.text_disabled, 0);
 
+    lv_subject_add_observer_obj(view_model().cover_revision_subject(), cover_changed, content, this);
+    refresh_cover();
+
     auto* more = lv_label_create(content);
     lv_label_set_text(more, "5/7 track   8 repeat   HOLD ESC exit");
     lv_obj_set_style_text_font(more, caption ? caption : &lv_font_montserrat_10, 0);
@@ -117,9 +132,42 @@ void NowPlayingScreen::build_content(lv_obj_t* content) {
     lv_obj_set_style_text_color(more, colors.text_disabled, 0);
 }
 
+void NowPlayingScreen::refresh_cover() {
+    const auto& data = view_model().cover_data();
+    if (data.empty() || view_model().cover_width() <= 0) {
+        if (cover_image_) {
+            lv_obj_add_flag(cover_image_, LV_OBJ_FLAG_HIDDEN);
+        }
+        if (cover_initials_) {
+            lv_obj_remove_flag(cover_initials_, LV_OBJ_FLAG_HIDDEN);
+        }
+        return;
+    }
+    auto cover = std::make_unique<Cover>();
+    cover->data = data;
+    cover->dsc.header.magic = LV_IMAGE_HEADER_MAGIC;
+    cover->dsc.header.cf = LV_COLOR_FORMAT_RGB565;
+    cover->dsc.header.w = view_model().cover_width();
+    cover->dsc.header.h = view_model().cover_height();
+    cover->dsc.header.stride = view_model().cover_width() * 2;
+    cover->dsc.data_size = static_cast<std::uint32_t>(cover->data.size());
+    cover->dsc.data = cover->data.data();
+    lv_image_set_src(cover_image_, &cover->dsc);
+    lv_obj_remove_flag(cover_image_, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(cover_initials_, LV_OBJ_FLAG_HIDDEN);
+    covers_.push_back(std::move(cover));
+    if (covers_.size() > 8) {
+        covers_.erase(covers_.begin());
+    }
+}
+
 bool NowPlayingScreen::handle_key(std::uint32_t key, bool long_pressed) {
     if (long_pressed) {
         return false;
+    }
+    if (key == 0) {
+        refresh_cover();
+        return true;
     }
     switch (key) {
         case LV_KEY_LEFT:

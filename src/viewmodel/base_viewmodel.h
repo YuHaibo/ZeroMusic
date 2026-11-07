@@ -103,6 +103,12 @@ public:
     void cycle_language();
     void rescan();
 
+    void load_cover(const std::string& url, int size = 120);
+    const std::vector<std::uint8_t>& cover_data() const { return cover_data_; }
+    int cover_width() const { return cover_width_; }
+    int cover_height() const { return cover_height_; }
+    lv_subject_t* cover_revision_subject();
+
     const std::vector<PluginItem>& plugins() const { return plugins_; }
     void load_plugins();
     void set_plugin_enabled(std::size_t index, bool on);
@@ -176,6 +182,10 @@ private:
     std::vector<LyricItem> lyrics_;
     std::string track_id_;
     std::vector<PluginItem> plugins_;
+    std::vector<std::uint8_t> cover_data_;
+    int cover_width_ = 0;
+    int cover_height_ = 0;
+    std::string cover_url_;
 
     reactive::StringSubject<32> title_subject_;
     reactive::StringSubject<32> source_subject_;
@@ -196,6 +206,7 @@ private:
     reactive::IntSubject plugins_revision_subject_;
     reactive::StringSubject<512> prompt_qr_subject_;
     reactive::StringSubject<256> prompt_text_subject_;
+    reactive::IntSubject cover_revision_subject_;
     reactive::IntSubject progress_subject_;
     reactive::BoolSubject playing_subject_;
     reactive::BoolSubject connected_subject_;
