@@ -751,6 +751,19 @@ void BaseViewModel::on_event(const std::string& name, const ipc::Json& data) {
         model_.set_status(text);
         status_subject_.set(text.c_str());
     }
+    else if (name == "scan.progress") {
+        const int done = data.value("done", 0);
+        const int total = data.value("total", 0);
+        if (total > 0 && done < total) {
+            const std::string text = "Scanning " + std::to_string(done) + "/" + std::to_string(total);
+            status_subject_.set(text.c_str());
+            model_.set_status(text);
+        }
+        else if (total > 0) {
+            status_subject_.set("Library ready");
+            model_.set_status("Library ready");
+        }
+    }
     else if (name == "plugin.install") {
         const std::string phase = data.value("phase", "");
         if (phase == "done") {

@@ -150,9 +150,13 @@ func (s *Source) scan(ctx context.Context, gen int64, folders []string) {
 
 	lastSave := time.Now()
 	read := 0
+	if len(fresh) > 0 {
+		s.reportProgress(0, len(fresh), "")
+	}
 	for e := range s.readFiles(ctx, fresh) {
 		current[e.Path] = e
 		read++
+		s.reportProgress(read, len(fresh), e.Path)
 		if read%scanBatch != 0 || ctx.Err() != nil {
 			continue
 		}
@@ -167,6 +171,9 @@ func (s *Source) scan(ctx context.Context, gen int64, folders []string) {
 	}
 	if gone || sidecarMoved || len(fresh) > 0 {
 		s.saveIndex(current)
+	}
+	if len(fresh) > 0 {
+		s.reportProgress(len(fresh), len(fresh), "")
 	}
 	s.publish(gen, current, true)
 }

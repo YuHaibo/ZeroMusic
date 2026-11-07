@@ -113,6 +113,8 @@ cmake --build build/dev -j8
   [Settings](../screenshot/zero-music-settings.png) /
   [Plugins](../screenshot/zero-music-plugins.png)。
 
+- 本地扫描通过 `local.OnProgress` 发出 `scan.progress {done,total,path}`，
+  UI 状态栏显示扫描进度，完成后显示 `Library ready`。
 - core 新增 `image.get`：按 URL 抓取、解码、居中裁方、缩放到指定尺寸，
   返回 base64 的 RGB565；内存缓存 16 MB。Now Playing 用它显示真实封面。
   （协议里图片用 base64 JSON，未走二进制帧；尺寸小，先这样。）

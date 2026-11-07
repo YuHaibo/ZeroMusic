@@ -117,6 +117,11 @@ func New(opts Options) (*App, error) {
 			a.publishEvent("sources.changed", a.sources())
 		})
 	})
+	a.local.OnProgress(func(done, total int, path string) {
+		a.post(func() {
+			a.publishEvent("scan.progress", map[string]any{"done": done, "total": total, "path": path})
+		})
+	})
 	if !opts.SkipDefaultFolders && len(a.local.Folders()) == 0 {
 		if dir := MusicDir(); dir != "" {
 			if st, err := os.Stat(dir); err == nil && st.IsDir() {

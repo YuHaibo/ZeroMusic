@@ -62,6 +62,7 @@ type Source struct {
 	mu         sync.RWMutex
 	lib        library
 	onChange   func()
+	onProgress func(done, total int, path string)
 	scanning   bool
 	scanGen    int64 // the scan under way; an older one publishes nothing
 	cancelScan func()
@@ -93,6 +94,23 @@ func (s *Source) OnChange(fn func()) {
 	s.mu.Lock()
 	s.onChange = fn
 	s.mu.Unlock()
+}
+
+// OnProgress sets what's called, on the scan's goroutine, as files are read,
+// with how many of how many, and the one being read.
+func (s *Source) OnProgress(fn func(done, total int, path string)) {
+	s.mu.Lock()
+	s.onProgress = fn
+	s.mu.Unlock()
+}
+
+func (s *Source) reportProgress(done, total int, path string) {
+	s.mu.RLock()
+	fn := s.onProgress
+	s.mu.RUnlock()
+	if fn != nil {
+		fn(done, total, path)
+	}
 }
 
 func (s *Source) notify() {
