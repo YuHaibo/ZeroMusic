@@ -27,7 +27,7 @@ private:
     void refresh_selection();
     void adjust(int direction);
 
-    std::array<lv_obj_t*, 6> rows_{};
+    std::array<lv_obj_t*, 5> rows_{};
     int selected_ = 0;
 };
 

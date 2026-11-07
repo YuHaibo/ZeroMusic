@@ -43,11 +43,20 @@ void InstallScreen::build_list() {
     lv_obj_align(title, LV_ALIGN_TOP_LEFT, 10, 2);
     lv_obj_set_style_text_color(title, colors.text, 0);
 
+    status_ = lv_label_create(content_);
+    lv_obj_set_width(status_, 180);
+    lv_obj_set_style_text_align(status_, LV_TEXT_ALIGN_RIGHT, 0);
+    lv_label_set_long_mode(status_, LV_LABEL_LONG_DOT);
+    lv_obj_set_style_text_font(status_, caption ? caption : &lv_font_montserrat_10, 0);
+    lv_obj_align(status_, LV_ALIGN_TOP_RIGHT, -8, 3);
+    lv_obj_set_style_text_color(status_, colors.primary, 0);
+    lv_label_bind_text(status_, view_model().status_subject(), nullptr);
+
     for (int i = 0; i < 6; ++i) {
         auto* row = lv_obj_create(content_);
         lv_obj_remove_style_all(row);
-        lv_obj_set_size(row, 300, 19);
-        lv_obj_align(row, LV_ALIGN_TOP_LEFT, 10, 20 + i * 20);
+        lv_obj_set_size(row, 300, 16);
+        lv_obj_align(row, LV_ALIGN_TOP_LEFT, 10, 20 + i * 18);
         lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
         lv_obj_set_style_radius(row, 3, 0);
         rows_[i] = row;

@@ -11,12 +11,20 @@
 #include "theme.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdlib>
 
 namespace screen {
 namespace {
 
 void plugins_changed(lv_observer_t* observer, lv_subject_t*) {
+    auto* screen = static_cast<PluginsScreen*>(lv_observer_get_user_data(observer));
+    if (screen) {
+        screen->handle_key(0, false);
+    }
+}
+
+void sources_changed(lv_observer_t* observer, lv_subject_t*) {
     auto* screen = static_cast<PluginsScreen*>(lv_observer_get_user_data(observer));
     if (screen) {
         screen->handle_key(0, false);
@@ -33,7 +41,7 @@ void settings_changed(lv_observer_t* observer, lv_subject_t*) {
 } // namespace
 
 bool PluginsScreen::text_input_active() const {
-    return mode_ == Mode::Settings && editing_;
+    return (mode_ == Mode::Settings && editing_) || (mode_ == Mode::List && searching_);
 }
 
 void PluginsScreen::build_content(lv_obj_t* content) {
@@ -49,11 +57,11 @@ void PluginsScreen::build_list() {
     auto* body = assets().load_standard_font(12);
     auto* caption = assets().load_standard_font(10);
 
-    auto* title = lv_label_create(screen_content_);
-    lv_label_set_text(title, "Plugins");
-    lv_obj_set_style_text_font(title, caption ? caption : &lv_font_montserrat_10, 0);
-    lv_obj_align(title, LV_ALIGN_TOP_LEFT, 10, 2);
-    lv_obj_set_style_text_color(title, colors.text_disabled, 0);
+    title_ = lv_label_create(screen_content_);
+    lv_label_set_text(title_, searching_ ? ("Search: " + filter_ + "_").c_str() : "Plugins  (Q search)");
+    lv_obj_set_style_text_font(title_, caption ? caption : &lv_font_montserrat_10, 0);
+    lv_obj_align(title_, LV_ALIGN_TOP_LEFT, 10, 2);
+    lv_obj_set_style_text_color(title_, searching_ ? colors.primary : colors.text_disabled, 0);
 
     for (int i = 0; i < 6; ++i) {
         auto* row = lv_obj_create(screen_content_);
@@ -85,25 +93,49 @@ void PluginsScreen::build_list() {
     lv_obj_align(empty_, LV_ALIGN_TOP_LEFT, 10, 30);
     lv_obj_set_style_text_color(empty_, colors.text_disabled, 0);
 
-    auto* hint = lv_label_create(screen_content_);
-    lv_label_set_text(hint, "ENTER on/off  U use  S sign in  A acct  E set  I install");
-    lv_obj_set_style_text_font(hint, caption ? caption : &lv_font_montserrat_10, 0);
-    lv_label_set_long_mode(hint, LV_LABEL_LONG_CLIP);
-    lv_obj_set_width(hint, 300);
-    lv_obj_align(hint, LV_ALIGN_BOTTOM_MID, 0, -4);
-    lv_obj_set_style_text_color(hint, colors.text_disabled, 0);
+    hint_ = lv_label_create(screen_content_);
+    lv_label_set_text(hint_, "ENTER on/off  U use  S sign in  A acct  E set  I install");
+    lv_obj_set_style_text_font(hint_, caption ? caption : &lv_font_montserrat_10, 0);
+    lv_label_set_long_mode(hint_, LV_LABEL_LONG_CLIP);
+    lv_obj_set_width(hint_, 300);
+    lv_obj_align(hint_, LV_ALIGN_BOTTOM_MID, 0, -4);
+    lv_obj_set_style_text_color(hint_, colors.text_disabled, 0);
 
     lv_subject_add_observer_obj(view_model().plugins_revision_subject(), plugins_changed, screen_content_, this);
+    lv_subject_add_observer_obj(view_model().sources_revision_subject(), sources_changed, screen_content_, this);
     view_model().load_plugins();
     refresh();
 }
 
 void PluginsScreen::refresh() {
     const auto colors = view::palette(view_model().is_dark_mode());
+    if (title_) {
+        lv_label_set_text(title_, searching_ ? ("Search: " + filter_ + "_").c_str() : "Plugins  (Q search)");
+        lv_obj_set_style_text_color(title_, searching_ ? colors.primary : colors.text_disabled, 0);
+    }
+    if (hint_) {
+        lv_label_set_text(hint_, searching_ ? "Type to filter  ESC clear"
+                                            : "ENTER on/off  U use  S sign in  A acct  E set  I install");
+    }
     const auto& plugins = view_model().plugins();
-    const int count = static_cast<int>(plugins.size());
+    visible_.clear();
+    std::string filter = filter_;
+    std::transform(filter.begin(), filter.end(), filter.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    for (std::size_t i = 0; i < plugins.size(); ++i) {
+        if (filter.empty()) {
+            visible_.push_back(static_cast<int>(i));
+            continue;
+        }
+        std::string name = plugins[i].name + " " + plugins[i].id;
+        std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        if (name.find(filter) != std::string::npos) {
+            visible_.push_back(static_cast<int>(i));
+        }
+    }
+    const int count = static_cast<int>(visible_.size());
     if (count == 0) {
         if (empty_) {
+            lv_label_set_text(empty_, plugins.empty() ? "No plugins installed" : "No matching plugins");
             lv_obj_remove_flag(empty_, LV_OBJ_FLAG_HIDDEN);
         }
         for (auto* row : rows_) {
@@ -138,16 +170,15 @@ void PluginsScreen::refresh() {
             continue;
         }
         lv_obj_remove_flag(rows_[i], LV_OBJ_FLAG_HIDDEN);
-        const auto& plugin = plugins[static_cast<std::size_t>(index)];
+        const auto& plugin = plugins[static_cast<std::size_t>(visible_[static_cast<std::size_t>(index)])];
         std::string name = plugin.name;
         if (!plugin.version.empty()) {
             name += "  " + plugin.version;
         }
         lv_label_set_text(names_[i], name.c_str());
-        std::string state = plugin.enabled ? "On" : "Off";
-        if (plugin.process) {
-            state += plugin.granted ? "  granted" : "  app";
-        }
+        std::string state = plugin.id == view_model().active_source_id()
+                                ? "Using"
+                                : (plugin.enabled ? "On" : "Off");
         lv_label_set_text(states_[i], state.c_str());
         const bool on = index == selected_;
         lv_obj_set_style_bg_opa(rows_[i], on ? LV_OPA_30 : LV_OPA_TRANSP, 0);
@@ -159,6 +190,9 @@ void PluginsScreen::refresh() {
 }
 
 void PluginsScreen::build_settings() {
+    title_ = nullptr;
+    hint_ = nullptr;
+    empty_ = nullptr;
     lv_obj_clean(screen_content_);
     const auto colors = view::palette(view_model().is_dark_mode());
     auto* body = assets().load_standard_font(12);
@@ -307,7 +341,48 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
         }
     }
 
+    if (searching_) {
+        if (key == LV_KEY_ESC) {
+            searching_ = false;
+            filter_.clear();
+            selected_ = 0;
+            build_list();
+            return true;
+        }
+        if (key == LV_KEY_BACKSPACE) {
+            if (!filter_.empty()) {
+                filter_.pop_back();
+            }
+            refresh();
+            return true;
+        }
+        if (key == LV_KEY_ENTER) {
+            searching_ = false;
+            refresh();
+            return true;
+        }
+        if (key >= 32 && key < 127) {
+            if (filter_.size() < 32) {
+                filter_.push_back(static_cast<char>(key));
+            }
+            refresh();
+            return true;
+        }
+    }
     if (key == 0) {
+        refresh();
+        return true;
+    }
+    if (key == 'q' || key == 'Q') {
+        searching_ = true;
+        filter_.clear();
+        selected_ = 0;
+        build_list();
+        return true;
+    }
+    if (key == LV_KEY_ESC && !filter_.empty()) {
+        filter_.clear();
+        selected_ = 0;
         refresh();
         return true;
     }
@@ -315,10 +390,13 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
         view_model().show_page(model::AppPage::Install);
         return true;
     }
-    const int count = static_cast<int>(view_model().plugins().size());
+    const int count = static_cast<int>(visible_.size());
     if (count == 0) {
         return false;
     }
+    const auto original = [this](int row) {
+        return static_cast<std::size_t>(visible_[static_cast<std::size_t>(row)]);
+    };
     switch (key) {
         case LV_KEY_UP:
             selected_ = (selected_ + count - 1) % count;
@@ -329,26 +407,26 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
             refresh();
             return true;
         case LV_KEY_ENTER:
-            view_model().set_plugin_enabled(static_cast<std::size_t>(selected_),
-                                            !view_model().plugins()[static_cast<std::size_t>(selected_)].enabled);
+            view_model().set_plugin_enabled(original(selected_),
+                                            !view_model().plugins()[original(selected_)].enabled);
             return true;
         case 'g':
         case 'G': {
-            const auto& plugin = view_model().plugins()[static_cast<std::size_t>(selected_)];
-            view_model().grant_plugin(static_cast<std::size_t>(selected_), !plugin.granted);
+            const auto& plugin = view_model().plugins()[original(selected_)];
+            view_model().grant_plugin(original(selected_), !plugin.granted);
             return true;
         }
         case 's':
         case 'S':
-            view_model().sign_in_plugin(static_cast<std::size_t>(selected_));
+            view_model().sign_in_plugin(original(selected_));
             return true;
         case 'u':
         case 'U':
-            view_model().use_plugin(static_cast<std::size_t>(selected_));
+            view_model().use_plugin(original(selected_));
             return true;
         case 'a':
         case 'A':
-            view_model().load_account(static_cast<std::size_t>(selected_));
+            view_model().load_account(original(selected_));
             view_model().show_page(model::AppPage::Account);
             return true;
         case 'e':
@@ -356,7 +434,7 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
             mode_ = Mode::Settings;
             edit_selected_ = 0;
             editing_ = false;
-            view_model().load_plugin_settings(static_cast<std::size_t>(selected_));
+            view_model().load_plugin_settings(original(selected_));
             build_settings();
             return true;
         }

@@ -341,6 +341,7 @@ void BaseViewModel::request_browse(const std::string& source, const std::string&
                 request_browse(source, next, fallback - 1);
                 return;
             }
+            clear_lists();
             fail(code, message);
             return;
         }
@@ -468,6 +469,7 @@ void BaseViewModel::load_home() {
                  ipc::Json{{"source", source}, {"method", "home"}, {"params", ipc::Json::object()}},
                  [this](const ipc::Json& result, const std::string& code, const std::string& message) {
         if (!code.empty()) {
+            clear_lists();
             fail(code, message);
             return;
         }
@@ -633,6 +635,7 @@ void BaseViewModel::cycle_source() {
     active_source_ = sources_[at].first;
     model_.set_source_name(sources_[at].second);
     source_subject_.set(sources_[at].second.c_str());
+    clear_lists();
     sources_revision_subject_.set(sources_revision_subject_.value() + 1);
 }
 
@@ -686,6 +689,13 @@ void BaseViewModel::set_plugin_enabled(std::size_t index, bool on) {
     });
 }
 
+void BaseViewModel::clear_lists() {
+    tracks_.clear();
+    collection_.clear();
+    list_revision_subject_.set(list_revision_subject_.value() + 1);
+    collection_revision_subject_.set(collection_revision_subject_.value() + 1);
+}
+
 void BaseViewModel::use_plugin(std::size_t index) {
     if (index >= plugins_.size()) {
         return;
@@ -698,6 +708,7 @@ void BaseViewModel::use_plugin(std::size_t index) {
     active_source_ = plugins_[index].id;
     model_.set_source_name(plugins_[index].name);
     source_subject_.set(plugins_[index].name.c_str());
+    clear_lists();
     sources_revision_subject_.set(sources_revision_subject_.value() + 1);
     const std::string text = "Using " + plugins_[index].name;
     status_subject_.set(text.c_str());

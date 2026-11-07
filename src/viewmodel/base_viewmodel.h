@@ -142,6 +142,7 @@ public:
     lv_subject_t* cover_revision_subject();
 
     const std::vector<PluginItem>& plugins() const { return plugins_; }
+    const std::string& active_source_id() const { return active_source_; }
     void load_plugins();
     void set_plugin_enabled(std::size_t index, bool on);
     void use_plugin(std::size_t index);
@@ -210,6 +211,7 @@ private:
     void apply_sources(const ipc::Json& sources);
     void apply_settings(const ipc::Json& settings);
     void request_browse(const std::string& source, const std::string& page, int fallback);
+    void clear_lists();
     void apply_browse(const ipc::Json& browse);
     void apply_tracks(const ipc::Json& tracks, const std::string& title);
     void apply_connection_status();

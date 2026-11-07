@@ -105,9 +105,13 @@ cmake --build build/dev -j8
 - Queue 页按播放顺序显示队列，Enter 跳转，Backspace 删除。
 - Lyrics 页显示当前行及前后行，自动跟随播放，上下可手动滚动；core 在歌词
   加载后补发一次完整 `player.state`。
-- Settings 页可调音量、源、音质、缓存、语言，并触发重扫。
+- Settings 页可调音量、音质、缓存、语言，并触发重扫；音源只在 Plugins 页切换。
 - Plugins 页列出插件、Enter 启停、`U` 切换为当前音源、`G` 授权 process、`S` 登录、
-  `E` 打开插件设置；设置值用 ASCII 键盘编辑，Enter 保存。
+  `E` 打开插件设置；`Q` 进入列表内快速筛选；当前源行显示 `Using`。
+- 插件安装完成时，安装页右上状态显示 `Installed <id>`；安装列表 6 行与
+  底部提示不再重叠。
+- 切换音源会立即清空旧源的列表/集合数据，避免 Browse 继续显示旧插件内容。
+- Now Playing 的 LIKE 移到 Playing/Paused 行右侧，不再压住进度条。
 - Plugins 页 `I` 打开安装页：默认列出 GitHub 话题
   `mygo-music-plugin` 的公开仓库（`plugin.available`），上下选择、Enter
   安装；`T` 可手动输入 `owner/repo`，`A` 打开账户页（`X` 退出登录）。
@@ -149,8 +153,8 @@ cmake --build build/dev -j8
   [Detail](../screenshot/zero-music-detail.png) /
   [Liked](../screenshot/zero-music-liked.png)。
 
-- Plugins 页 `I` 打开 GitHub 安装输入页，输入 `owner/repo` 后 Enter 安装；
-  进度经 `plugin.install` 事件显示。
+- Plugins 页 `I` 打开安装页，默认列 GitHub 话题 `mygo-music-plugin`
+  仓库；`T` 切手动输入 `owner/repo`。
 - 截图：[Install](../screenshot/zero-music-install.png) /
   [Plugin settings](../screenshot/zero-music-plugin-settings.png)。
 
@@ -184,7 +188,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 已验证产物（2026-11-07）：
 
 - `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
-  `dae11a007fd42983c446267ad8b3b3d56a38daaf4d65d3194c49e8ce797ce687`；
+  `773322398416cf35c2c50517fb4077f9249641dfe3f35c7b261f7df9e94fcbbf`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与

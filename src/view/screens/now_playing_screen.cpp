@@ -123,7 +123,7 @@ void NowPlayingScreen::build_content(lv_obj_t* content) {
     auto* like = lv_label_create(content);
     reactive::bind_bool_text(like, view_model().liked_subject(), "LIKE", "LIKED");
     lv_obj_set_style_text_font(like, caption ? caption : &lv_font_montserrat_10, 0);
-    lv_obj_align(like, LV_ALIGN_TOP_LEFT, 98, 80);
+    lv_obj_align(like, LV_ALIGN_TOP_RIGHT, -10, 66);
     lv_obj_set_style_text_color(like, colors.primary, 0);
 
     lv_subject_add_observer_obj(view_model().cover_revision_subject(), cover_changed, content, this);

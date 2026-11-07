@@ -19,9 +19,8 @@ struct Row {
     const char* label;
 };
 
-constexpr std::array<Row, 6> kRows = {{
+constexpr std::array<Row, 5> kRows = {{
     {"Volume"},
-    {"Source"},
     {"Quality"},
     {"Cache"},
     {"Language"},
@@ -79,15 +78,12 @@ void SettingsScreen::build_content(lv_obj_t* content) {
                 lv_subject_add_observer_obj(view_model().volume_subject(), volume_changed, value, nullptr);
                 break;
             case 1:
-                lv_label_bind_text(value, view_model().source_subject(), nullptr);
-                break;
-            case 2:
                 lv_label_bind_text(value, view_model().quality_subject(), nullptr);
                 break;
-            case 3:
+            case 2:
                 lv_label_bind_text(value, view_model().cache_subject(), nullptr);
                 break;
-            case 4:
+            case 3:
                 lv_label_bind_text(value, view_model().language_subject(), nullptr);
                 break;
             case 5:
@@ -125,15 +121,12 @@ void SettingsScreen::adjust(int direction) {
             view_model().volume_delta(direction * 5);
             break;
         case 1:
-            view_model().cycle_source();
-            break;
-        case 2:
             view_model().cycle_quality();
             break;
-        case 3:
+        case 2:
             view_model().cycle_cache();
             break;
-        case 4:
+        case 3:
             view_model().cycle_language();
             break;
         default:
@@ -161,7 +154,7 @@ bool SettingsScreen::handle_key(std::uint32_t key, bool long_pressed) {
             adjust(1);
             return true;
         case LV_KEY_ENTER:
-            if (selected_ == 5) {
+            if (selected_ == 4) {
                 view_model().rescan();
             }
             else {

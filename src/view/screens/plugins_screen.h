@@ -10,6 +10,7 @@
 
 #include <array>
 #include <string>
+#include <vector>
 
 namespace screen {
 
@@ -41,6 +42,9 @@ private:
     int edit_selected_ = 0;
     bool editing_ = false;
     bool auto_settings_ = false;
+    bool searching_ = false;
+    std::string filter_;
+    std::vector<int> visible_;
     std::string edit_buffer_;
     std::array<lv_obj_t*, 6> setting_rows_{};
     std::array<lv_obj_t*, 6> setting_labels_{};
@@ -49,6 +53,8 @@ private:
     std::array<lv_obj_t*, 6> names_{};
     std::array<lv_obj_t*, 6> states_{};
     lv_obj_t* empty_{nullptr};
+    lv_obj_t* title_{nullptr};
+    lv_obj_t* hint_{nullptr};
     int selected_ = 0;
     int offset_ = 0;
 };

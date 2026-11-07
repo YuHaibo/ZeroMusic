@@ -42,6 +42,7 @@ private:
     std::array<lv_obj_t*, 6> repos_{};
     std::array<lv_obj_t*, 6> descriptions_{};
     lv_obj_t* empty_{nullptr};
+    lv_obj_t* status_{nullptr};
     lv_obj_t* field_{nullptr};
     int selected_ = 0;
     int offset_ = 0;
