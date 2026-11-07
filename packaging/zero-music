@@ -1,0 +1,14 @@
+#!/bin/sh
+# Start the core, then the UI, and stop the core when the UI is done.
+set -eu
+BIN_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+SOCK=${ZERO_MUSIC_SOCKET:-"${XDG_RUNTIME_DIR:-/tmp}/zero-music.sock"}
+rm -f "$SOCK"
+"$BIN_DIR/zero-music-core" --socket "$SOCK" &
+core=$!
+trap 'kill "$core" 2>/dev/null || true' INT TERM EXIT
+"$BIN_DIR/zero-music-ui" --socket "$SOCK"
+status=$?
+kill "$core" 2>/dev/null || true
+wait "$core" 2>/dev/null || true
+exit "$status"

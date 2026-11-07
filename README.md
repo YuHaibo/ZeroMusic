@@ -192,9 +192,9 @@ cmake --build --preset linux-x86-64-dbg
 Run:
 
 ```shell
-./build/linux-x86-64/Debug/zero-music
+./build/linux-x86-64/Debug/zero-music-ui
 # or launch release build
-# ./build/linux-x86-64/Release/zero-music
+# ./build/linux-x86-64/Release/zero-music-ui
 ```
 
 ### macOS Desktop
@@ -234,12 +234,17 @@ cmake --build --preset darwin-arm64-dbg
 # cmake --build --preset darwin-arm64-rel
 ```
 
+The build also compiles `core/` with Go 1.27 or newer. Configure with
+`-DZERO_MUSIC_BUILD_CORE=OFF` to skip it. The UI alone is
+`build/darwin-arm64/Debug/zero-music-ui`; from a checkout, run it with the
+wrapper (`packaging/zero-music`) so the core starts and stops with it.
+
 Run:
 
 ```shell
-./build/darwin-arm64/Debug/zero-music
+./build/darwin-arm64/Debug/zero-music-ui
 # or launch release build
-# ./build/darwin-arm64/Release/zero-music
+# ./build/darwin-arm64/Release/zero-music-ui
 ```
 
 For Intel macOS, use the `darwin-x86-64` configure preset and matching build preset:
@@ -249,9 +254,9 @@ cmake --preset darwin-x86-64
 cmake --build --preset darwin-x86-64-dbg
 # alternatively, you can run release build
 # cmake --build --preset darwin-x86-64-rel
-./build/darwin-x86-64/Debug/zero-music
+./build/darwin-x86-64/Debug/zero-music-ui
 # or launch release build
-# ./build/darwin-x86-64/Release/zero-music
+# ./build/darwin-x86-64/Release/zero-music-ui
 ```
 
 ### Windows Desktop
@@ -317,11 +322,11 @@ Configure and build with MSVC:
 ```powershell
 cmake --preset win32-msvc
 cmake --build --preset win32-msvc-dbg
-.\build\msvc\Debug\zero-music.exe
+.\build\msvc\Debug\zero-music-ui.exe
 
 # alternatively for release build
 # cmake --build --preset win32-msvc-rel
-# .\build\msvc\Release\zero-music.exe
+# .\build\msvc\Release\zero-music-ui.exe
 ```
 
 Configure and build with MinGW-w64:
@@ -346,11 +351,11 @@ Configure and build with MinGW-w64:
 ```powershell
 cmake --preset win32-mingw64
 cmake --build --preset win32-mingw64-dbg
-.\build\mingw64\Debug\zero-music.exe
+.\build\mingw64\Debug\zero-music-ui.exe
 
 # alternatively for release build
 # cmake --build --preset win32-mingw64-rel
-#.\build\mingw64\Release\zero-music.exe
+#.\build\mingw64\Release\zero-music-ui.exe
 ```
 > [!NOTE]
 > `VCPKG` will handle the dependencies during CMake configuration process automatically, 

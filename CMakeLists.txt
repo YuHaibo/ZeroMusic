@@ -681,6 +681,8 @@ add_executable(${PROJECT_NAME}
     src/main.cpp
 )
 
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "zero-music-ui")
+
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         ${PROJECT_NAME}_platform
@@ -689,6 +691,66 @@ target_link_libraries(${PROJECT_NAME}
         ${PROJECT_NAME}_view
         ${PROJECT_NAME}_viewmodel
 )
+
+# ====================================================
+# Go core
+# ====================================================
+option(ZERO_MUSIC_BUILD_CORE "Build the Go core with the UI" ON)
+set(ZERO_MUSIC_CORE_BIN "${CMAKE_CURRENT_BINARY_DIR}/zero-music-core")
+
+if(ZERO_MUSIC_BUILD_CORE)
+    find_program(GO_EXECUTABLE go)
+    if(NOT GO_EXECUTABLE)
+        message(FATAL_ERROR "Go is needed to build zero-music-core; install Go 1.27+ or configure with -DZERO_MUSIC_BUILD_CORE=OFF")
+    endif()
+
+    if(USE_DESKTOP)
+        if(APPLE)
+            set(GOOS darwin)
+            if(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
+                set(GOARCH amd64)
+            else()
+                set(GOARCH arm64)
+            endif()
+        else()
+            set(GOOS linux)
+            if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+                set(GOARCH arm64)
+            else()
+                set(GOARCH amd64)
+            endif()
+        endif()
+    else()
+        set(GOOS linux)
+        set(GOARCH arm64)
+    endif()
+
+    file(GLOB_RECURSE CORE_GO_SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/core/*.go"
+    )
+    list(APPEND CORE_GO_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/core/go.mod"
+        "${CMAKE_CURRENT_SOURCE_DIR}/core/go.sum"
+    )
+
+    add_custom_command(
+        OUTPUT "${ZERO_MUSIC_CORE_BIN}"
+        COMMAND ${CMAKE_COMMAND} -E env
+            GOCACHE=${CMAKE_CURRENT_SOURCE_DIR}/.cache/go-build
+            GOMODCACHE=${CMAKE_CURRENT_SOURCE_DIR}/.cache/go-mod
+            GOTMPDIR=${CMAKE_CURRENT_SOURCE_DIR}/.cache/go-tmp
+            CGO_ENABLED=0
+            GOOS=${GOOS}
+            GOARCH=${GOARCH}
+            ${GO_EXECUTABLE} build -trimpath -ldflags "-s -w"
+            -o "${ZERO_MUSIC_CORE_BIN}" ./cmd/zero-music-core
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/core"
+        DEPENDS ${CORE_GO_SOURCES}
+        COMMENT "Building Zero Music Go core (${GOOS}/${GOARCH})"
+        VERBATIM
+    )
+    add_custom_target(zero_music_core ALL DEPENDS "${ZERO_MUSIC_CORE_BIN}")
+endif()
 
 # Package deb
 include(cmake/cm0-package.cmake)

@@ -101,14 +101,31 @@ cmake --build build/dev -j8
 未做：专辑/艺人/歌单详情、歌词页、队列页、中文输入、封面图、Settings/
 Plugins/Sign-in 页面。
 
+### M6 构建与打包（已开始）
+
+- CMake 增加 `zero_music_core` 目标：按宿主/交叉平台设置 `GOOS/GOARCH`，
+  输出 `build/<preset>/zero-music-core`；Go 缓存放在仓库 `.cache/`。
+- UI 输出名改为 `zero-music-ui`；新增 `packaging/zero-music` wrapper：
+  先起 core，再起 UI，UI 退出后停止 core，转发 SIGINT/SIGTERM。
+- `cmake --install` 安装 `zero-music`、`zero-music-core`、`zero-music-ui`，
+  `/etc/zero-music.conf`、桌面项和资源；systemd 服务默认关闭。
+- 依赖加入 `libpulse0 | libasound2`、`ca-certificates`、`fonts-noto-cjk`；
+  `.deb` 文件名改为 `zero-music_<version>_<rev>_<arch>.deb`。
+- 许可证改为 AGPL-3.0，新增 `NOTICE`；store 名称/简介/分类/截图/网络权限
+  已改为 Zero Music。
+- 已验证：`cmake --build` 同时构建 UI 与 Go core；wrapper 启动/退出全流程
+  正常，core 收到信号后删除 socket。
+
+未验证：`cp0-cross` 交叉构建与 `.deb`（需要 BSP SDK）。
+
 ## 下一步
 
 1. **M4 剩余**：Detail/Lyrics/Queue、专辑/艺人/歌单、封面图。
 2. **M5**：Plugins/Settings/Sign-in 页面与插件安装。
 3. **M2 剩余**：`plugin.install/update/remove`、GitHub 安装、图片服务、
    `scan.progress`。
-4. **M6**：CMake 集成 Go core、`zero-music-ui` 命名、wrapper、`.desktop`、
-   `.deb`、截图、文档。
+4. **M6 剩余**：cp0-cross 构建、`.deb` 实际打包与安装验证、
+   APPLaunch 真机启动/退出、内存与帧率。
 
 ## 开发命令
 

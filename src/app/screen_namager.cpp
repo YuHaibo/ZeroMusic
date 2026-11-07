@@ -72,6 +72,11 @@ ScreenManager::~ScreenManager() {
         lv_observer_remove(page_observer_);
         page_observer_ = nullptr;
     }
+    // Deleting the active screen is what LVGL warns about; leave a blank one.
+    if (current_screen_ && current_screen_->root() &&
+        current_screen_->root() == lv_screen_active()) {
+        lv_screen_load(lv_obj_create(nullptr));
+    }
     current_screen_.reset();
 }
 
