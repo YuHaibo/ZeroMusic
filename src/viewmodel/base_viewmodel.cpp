@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <array>
+#include <utility>
 #include <vector>
 
 namespace viewmodel {
@@ -516,6 +517,24 @@ void BaseViewModel::cycle_language() {
     client_.call("settings.set", ipc::Json{{"language", language_}});
 }
 
+void BaseViewModel::cycle_source() {
+    if (sources_.size() < 2) {
+        return;
+    }
+    std::size_t at = 0;
+    for (std::size_t i = 0; i < sources_.size(); ++i) {
+        if (sources_[i].first == active_source_) {
+            at = i;
+            break;
+        }
+    }
+    at = (at + 1) % sources_.size();
+    active_source_ = sources_[at].first;
+    model_.set_source_name(sources_[at].second);
+    source_subject_.set(sources_[at].second.c_str());
+    sources_revision_subject_.set(sources_revision_subject_.value() + 1);
+}
+
 void BaseViewModel::rescan() {
     client_.call("library.rescan", ipc::Json::object());
     status_subject_.set("Scanning…");
@@ -868,6 +887,12 @@ void BaseViewModel::apply_sources(const ipc::Json& sources) {
                 source_subject_.set(model_.source_name().c_str());
                 break;
             }
+        }
+    }
+    sources_.clear();
+    for (const auto& source : sources) {
+        if (source.value("enabled", true)) {
+            sources_.emplace_back(source.value("id", ""), source.value("name", ""));
         }
     }
     sources_revision_subject_.set(sources_revision_subject_.value() + 1);

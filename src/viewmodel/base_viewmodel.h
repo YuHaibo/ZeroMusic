@@ -13,6 +13,7 @@
 #include "lvgl.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace viewmodel {
@@ -116,6 +117,7 @@ public:
     void cycle_cache();
     void cycle_language();
     void rescan();
+    void cycle_source();
 
     void load_cover(const std::string& url, int size = 120);
     const std::vector<std::uint8_t>& cover_data() const { return cover_data_; }
@@ -185,6 +187,7 @@ private:
     std::vector<model::AppPage> stack_;
     std::string active_source_ = "local";
     std::string preferred_source_;
+    std::vector<std::pair<std::string, std::string>> sources_;
     std::int64_t position_ms_ = 0;
     int volume_ = 80;
     int repeat_ = 0;

@@ -21,8 +21,8 @@ struct Row {
 
 constexpr std::array<Row, 6> kRows = {{
     {"Volume"},
+    {"Source"},
     {"Quality"},
-    {"Normalize"},
     {"Cache"},
     {"Language"},
     {"Rescan library"},
@@ -79,10 +79,10 @@ void SettingsScreen::build_content(lv_obj_t* content) {
                 lv_subject_add_observer_obj(view_model().volume_subject(), volume_changed, value, nullptr);
                 break;
             case 1:
-                lv_label_bind_text(value, view_model().quality_subject(), nullptr);
+                lv_label_bind_text(value, view_model().source_subject(), nullptr);
                 break;
             case 2:
-                lv_label_bind_text(value, view_model().normalize_subject(), nullptr);
+                lv_label_bind_text(value, view_model().quality_subject(), nullptr);
                 break;
             case 3:
                 lv_label_bind_text(value, view_model().cache_subject(), nullptr);
@@ -125,10 +125,10 @@ void SettingsScreen::adjust(int direction) {
             view_model().volume_delta(direction * 5);
             break;
         case 1:
-            view_model().cycle_quality();
+            view_model().cycle_source();
             break;
         case 2:
-            view_model().toggle_normalize();
+            view_model().cycle_quality();
             break;
         case 3:
             view_model().cycle_cache();
