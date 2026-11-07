@@ -77,6 +77,7 @@ func (a *App) pluginsInfo() []map[string]any {
 			"granted":     p.Granted(),
 			"permissions": p.Permissions(),
 			"settings":    info.Settings,
+			"signIn":      p.Can("signIn"),
 		})
 	}
 	return out

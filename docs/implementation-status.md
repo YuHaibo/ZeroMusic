@@ -106,11 +106,18 @@ cmake --build build/dev -j8
 - Lyrics 页显示当前行及前后行，自动跟随播放，上下可手动滚动；core 在歌词
   加载后补发一次完整 `player.state`。
 - Settings 页可调音量、音质、缓存、语言，并触发重扫；音源只在 Plugins 页切换。
-- Plugins 页列出插件、Enter 启停、`U` 切换为当前音源、`G` 授权 process、`S` 登录、
-  `E` 打开插件设置；`Q` 进入列表内快速筛选；当前源行显示 `Using`。
+  缓存默认 3 GB，可调 0/512 MB/1/2/3/4 GB；播放过的歌曲缓存在本地，
+  源仍在时断网也能用缓存播放。
+- Plugins 页列出插件；Enter 直接选用（不再显示 On/Off），当前源行显示
+  `Using`；支持 `Q` 列表内筛选、`D` 两次删除、`G` 授权 process、
+  `S` 登录、`E` 设置；声明了 `signIn` 的插件显示 `Login *`。
+- 插件列表选中项标题超长时横向滚动；歌单/专辑/艺人/安装列表同样。
 - 插件安装完成时，安装页右上状态显示 `Installed <id>`；安装列表 6 行与
   底部提示不再重叠。
-- 切换音源会立即清空旧源的列表/集合数据，避免 Browse 继续显示旧插件内容。
+- 切换/删除音源会立即清空旧源的列表/集合数据，避免 Browse 继续显示旧插件内容。
+- Browse/Songs/Home/集合列表空时显示 `Loading...` / `No results` /
+  `Error: ...`，不再是一片空白。
+- 选中行的长标题用 `LV_LABEL_LONG_SCROLL_CIRCULAR` 横向滚动，其他行省略号。
 - Now Playing 的 LIKE 移到 Playing/Paused 行右侧；新增 `VOL n%` 音量读数。
 - Now Playing 显示 3 行滚动歌词（当前行高亮），随播放位置自动滚动；
   歌词来自插件 `lyrics` 或本地 `.lrc`。实测 lizhi 能返回歌词。
@@ -191,7 +198,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 已验证产物（2026-11-07）：
 
 - `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
-  `ce4c9e6d22f10f588af2b471f2c39082a669c2883c311d8e59cecb91547e5ded`；
+  `d1cd5faff70201e620e2e8faa06c9ac26a38283a6e02e7d867c5b8921c76908f`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与

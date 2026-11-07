@@ -886,12 +886,6 @@ var errNoSource = errors.New("player: no such source")
 // there, or else streamed into the cache, and kept once it has all come in.
 // What failed ahead is asked for again: it may have been a moment's.
 func (p *Player) open(src music.Source, t music.Track, quality string, pre *ahead) (*music.Stream, stream, error) {
-	if src == nil {
-		if pre != nil {
-			pre.close()
-		}
-		return nil, nil, errNoSource
-	}
 	var dl *download
 	var info *music.Stream
 	ok := false
@@ -912,6 +906,12 @@ func (p *Player) open(src music.Source, t music.Track, quality string, pre *ahea
 		dl, info, ok = p.Cache.lookup(t.Source, t.ID, quality)
 	}
 	if !ok {
+		if src == nil {
+			if pre != nil {
+				pre.close()
+			}
+			return nil, nil, errNoSource
+		}
 		var err error
 		info, err = src.Stream(t.ID, quality)
 		if err != nil {

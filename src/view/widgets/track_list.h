@@ -42,6 +42,7 @@ private:
     app::AssetManager& assets_;
     Kind kind_;
     lv_obj_t* title_{nullptr};
+    lv_obj_t* status_{nullptr};
     std::array<lv_obj_t*, 6> rows_{};
     std::array<lv_obj_t*, 6> names_{};
     std::array<lv_obj_t*, 6> artists_{};

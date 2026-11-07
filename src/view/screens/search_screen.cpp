@@ -118,6 +118,16 @@ void SearchScreen::build_collection() {
         lv_obj_set_style_text_color(subtitles_[i], colors.text_disabled, 0);
     }
 
+    status_ = lv_label_create(content_);
+    lv_obj_set_width(status_, 280);
+    lv_obj_set_style_text_align(status_, LV_TEXT_ALIGN_CENTER, 0);
+    lv_label_set_long_mode(status_, LV_LABEL_LONG_DOT);
+    lv_obj_set_style_text_font(status_, caption ? caption : &lv_font_montserrat_10, 0);
+    lv_obj_align(status_, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_text_color(status_, colors.text_disabled, 0);
+    lv_label_bind_text(status_, view_model().list_status_subject(), nullptr);
+    lv_obj_add_flag(status_, LV_OBJ_FLAG_HIDDEN);
+
     lv_subject_add_observer_obj(view_model().collection_revision_subject(), results_changed, content_, this);
     lv_subject_add_observer_obj(view_model().sources_revision_subject(), sources_changed, content_, this);
     show_query();
@@ -128,6 +138,15 @@ void SearchScreen::refresh_collection() {
     const auto colors = view::palette(view_model().is_dark_mode());
     const auto& items = view_model().collection();
     const int count = static_cast<int>(items.size());
+    if (status_) {
+        const char* text = lv_subject_get_string(view_model().list_status_subject());
+        if (count == 0 && text && *text) {
+            lv_obj_remove_flag(status_, LV_OBJ_FLAG_HIDDEN);
+        }
+        else {
+            lv_obj_add_flag(status_, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
     if (selected_ >= count) {
         selected_ = std::max(0, count - 1);
     }
@@ -147,6 +166,7 @@ void SearchScreen::refresh_collection() {
         lv_label_set_text(titles_[i], items[static_cast<std::size_t>(index)].title.c_str());
         lv_label_set_text(subtitles_[i], items[static_cast<std::size_t>(index)].subtitle.c_str());
         const bool on = index == selected_;
+        lv_label_set_long_mode(titles_[i], on ? LV_LABEL_LONG_SCROLL_CIRCULAR : LV_LABEL_LONG_DOT);
         lv_obj_set_style_bg_opa(rows_[i], on ? LV_OPA_30 : LV_OPA_TRANSP, 0);
         lv_obj_set_style_bg_color(rows_[i], colors.primary, 0);
         lv_obj_set_style_border_width(rows_[i], on ? 2 : 0, 0);

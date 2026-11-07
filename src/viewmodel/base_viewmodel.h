@@ -67,6 +67,7 @@ struct PluginItem {
     bool enabled = false;
     bool granted = false;
     bool process = false;
+    bool login = false;
 };
 
 // LyricItem is a timed line, as the core parsed it.
@@ -156,6 +157,7 @@ public:
     void sign_out_account();
     lv_subject_t* account_subject();
     lv_subject_t* liked_subject();
+    void remove_plugin(std::size_t index);
     void load_plugin_settings(std::size_t index);
     void save_plugin_setting(std::size_t index, const std::string& value);
     const std::vector<PluginSetting>& plugin_settings() const { return plugin_settings_; }
@@ -197,6 +199,7 @@ public:
 
     lv_subject_t* list_title_subject();
     lv_subject_t* list_revision_subject();
+    lv_subject_t* list_status_subject();
     lv_subject_t* queue_revision_subject();
     lv_subject_t* lyrics_revision_subject();
     lv_subject_t* quality_subject();
@@ -212,6 +215,7 @@ private:
     void apply_settings(const ipc::Json& settings);
     void request_browse(const std::string& source, const std::string& page, int fallback);
     void clear_lists();
+    void set_list_status(const std::string& status);
     void apply_browse(const ipc::Json& browse);
     void apply_tracks(const ipc::Json& tracks, const std::string& title);
     void apply_connection_status();
@@ -231,7 +235,7 @@ private:
     bool hello_sent_ = false;
     std::string quality_ = "high";
     bool normalize_ = false;
-    int cache_mb_ = 512;
+    int cache_mb_ = 3072;
     std::string language_ = "system";
     std::string list_title_ = "Songs";
     std::vector<TrackItem> tracks_;
@@ -269,6 +273,7 @@ private:
     reactive::StringSubject<32> quality_subject_;
     reactive::StringSubject<32> normalize_subject_;
     reactive::StringSubject<32> cache_subject_;
+    reactive::StringSubject<96> list_status_subject_;
     reactive::StringSubject<32> language_subject_;
     reactive::IntSubject plugins_revision_subject_;
     reactive::IntSubject plugin_settings_revision_subject_;

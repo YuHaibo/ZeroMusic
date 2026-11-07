@@ -67,6 +67,16 @@ void TrackList::build() {
     lv_obj_align(title_, LV_ALIGN_TOP_LEFT, 10, 2);
     lv_obj_set_style_text_color(title_, colors.text, 0);
 
+    status_ = lv_label_create(core_obj_);
+    lv_obj_set_width(status_, 280);
+    lv_obj_set_style_text_align(status_, LV_TEXT_ALIGN_CENTER, 0);
+    lv_label_set_long_mode(status_, LV_LABEL_LONG_DOT);
+    lv_obj_set_style_text_font(status_, small ? small : &lv_font_montserrat_10, 0);
+    lv_obj_align(status_, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_text_color(status_, colors.text_disabled, 0);
+    lv_label_bind_text(status_, view_model_.list_status_subject(), nullptr);
+    lv_obj_add_flag(status_, LV_OBJ_FLAG_HIDDEN);
+
     for (int i = 0; i < kRows; ++i) {
         auto* row = lv_obj_create(core_obj_);
         lv_obj_remove_style_all(row);
@@ -114,6 +124,15 @@ void TrackList::refresh() {
     if (kind_ == Kind::Queue && view_model_.queue_at() >= 0) {
         selected_ = view_model_.queue_at();
     }
+    if (status_) {
+        const char* status = lv_subject_get_string(view_model_.list_status_subject());
+        if (count == 0 && status && *status) {
+            lv_obj_remove_flag(status_, LV_OBJ_FLAG_HIDDEN);
+        }
+        else {
+            lv_obj_add_flag(status_, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
     if (count > 0) {
         selected_ = std::clamp(selected_, 0, count - 1);
         if (selected_ < offset_) {
@@ -138,10 +157,11 @@ void TrackList::refresh() {
         lv_obj_remove_flag(rows_[i], LV_OBJ_FLAG_HIDDEN);
         const auto& track = tracks[static_cast<std::size_t>(index)];
         lv_label_set_text(names_[i], track.name.c_str());
+        const bool on = index == selected_;
+        lv_label_set_long_mode(names_[i], on ? LV_LABEL_LONG_SCROLL_CIRCULAR : LV_LABEL_LONG_DOT);
         lv_label_set_text(artists_[i], track.artist.c_str());
         const auto time = clock(track.duration_ms);
         lv_label_set_text(times_[i], time.c_str());
-        const bool on = index == selected_;
         lv_obj_set_style_bg_opa(rows_[i], on ? LV_OPA_30 : LV_OPA_TRANSP, 0);
         lv_obj_set_style_bg_color(rows_[i], colors.primary, 0);
         lv_obj_set_style_border_width(rows_[i], on ? 2 : 0, 0);

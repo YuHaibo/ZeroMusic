@@ -41,6 +41,7 @@ private:
     std::array<lv_obj_t*, 6> rows_{};
     std::array<lv_obj_t*, 6> titles_{};
     std::array<lv_obj_t*, 6> subtitles_{};
+    lv_obj_t* status_{nullptr};
     std::string query_;
     bool editing_ = true;
     int kind_ = 0; // 0 tracks, 1 albums, 2 artists, 3 playlists

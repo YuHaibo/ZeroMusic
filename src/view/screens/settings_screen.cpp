@@ -86,7 +86,7 @@ void SettingsScreen::build_content(lv_obj_t* content) {
             case 3:
                 lv_label_bind_text(value, view_model().language_subject(), nullptr);
                 break;
-            case 5:
+            case 4:
                 lv_label_set_text(value, "Enter");
                 break;
         }

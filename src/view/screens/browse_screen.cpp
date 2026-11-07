@@ -196,6 +196,15 @@ void BrowseScreen::refresh_collection() {
     const auto colors = view::palette(view_model().is_dark_mode());
     const auto& items = view_model().collection();
     const int count = static_cast<int>(items.size());
+    if (status_) {
+        const char* text = lv_subject_get_string(view_model().list_status_subject());
+        if (count == 0 && text && *text) {
+            lv_obj_remove_flag(status_, LV_OBJ_FLAG_HIDDEN);
+        }
+        else {
+            lv_obj_add_flag(status_, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
     if (selected_ >= count) {
         selected_ = std::max(0, count - 1);
     }
@@ -215,6 +224,7 @@ void BrowseScreen::refresh_collection() {
         lv_label_set_text(titles_[i], items[static_cast<std::size_t>(index)].title.c_str());
         lv_label_set_text(subtitles_[i], items[static_cast<std::size_t>(index)].subtitle.c_str());
         const bool on = index == selected_;
+        lv_label_set_long_mode(titles_[i], on ? LV_LABEL_LONG_SCROLL_CIRCULAR : LV_LABEL_LONG_DOT);
         lv_obj_set_style_bg_opa(rows_[i], on ? LV_OPA_30 : LV_OPA_TRANSP, 0);
         lv_obj_set_style_bg_color(rows_[i], colors.primary, 0);
         lv_obj_set_style_border_width(rows_[i], on ? 2 : 0, 0);

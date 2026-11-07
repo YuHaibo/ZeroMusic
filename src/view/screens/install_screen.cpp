@@ -120,6 +120,7 @@ void InstallScreen::refresh() {
         const auto& plugin = plugins[static_cast<std::size_t>(index)];
         lv_label_set_text(repos_[i], plugin.repo.c_str());
         const bool on = index == selected_;
+        lv_label_set_long_mode(repos_[i], on ? LV_LABEL_LONG_SCROLL_CIRCULAR : LV_LABEL_LONG_DOT);
         lv_obj_set_style_bg_opa(rows_[i], on ? LV_OPA_30 : LV_OPA_TRANSP, 0);
         lv_obj_set_style_bg_color(rows_[i], colors.primary, 0);
         lv_obj_set_style_border_width(rows_[i], on ? 2 : 0, 0);

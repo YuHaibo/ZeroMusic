@@ -55,6 +55,8 @@ private:
     lv_obj_t* empty_{nullptr};
     lv_obj_t* title_{nullptr};
     lv_obj_t* hint_{nullptr};
+    lv_obj_t* status_{nullptr};
+    int pending_delete_ = -1;
     int selected_ = 0;
     int offset_ = 0;
 };

@@ -63,6 +63,15 @@ void PluginsScreen::build_list() {
     lv_obj_align(title_, LV_ALIGN_TOP_LEFT, 10, 2);
     lv_obj_set_style_text_color(title_, searching_ ? colors.primary : colors.text_disabled, 0);
 
+    status_ = lv_label_create(screen_content_);
+    lv_obj_set_width(status_, 130);
+    lv_obj_set_style_text_align(status_, LV_TEXT_ALIGN_RIGHT, 0);
+    lv_label_set_long_mode(status_, LV_LABEL_LONG_DOT);
+    lv_obj_set_style_text_font(status_, caption ? caption : &lv_font_montserrat_10, 0);
+    lv_obj_align(status_, LV_ALIGN_TOP_RIGHT, -6, 3);
+    lv_obj_set_style_text_color(status_, colors.primary, 0);
+    lv_label_bind_text(status_, view_model().status_subject(), nullptr);
+
     for (int i = 0; i < 6; ++i) {
         auto* row = lv_obj_create(screen_content_);
         lv_obj_remove_style_all(row);
@@ -94,7 +103,7 @@ void PluginsScreen::build_list() {
     lv_obj_set_style_text_color(empty_, colors.text_disabled, 0);
 
     hint_ = lv_label_create(screen_content_);
-    lv_label_set_text(hint_, "ENTER on/off  U use  S sign in  A acct  E set  I install");
+    lv_label_set_text(hint_, "ENTER use  D delete  S sign in  E set  I install");
     lv_obj_set_style_text_font(hint_, caption ? caption : &lv_font_montserrat_10, 0);
     lv_label_set_long_mode(hint_, LV_LABEL_LONG_CLIP);
     lv_obj_set_width(hint_, 300);
@@ -115,7 +124,7 @@ void PluginsScreen::refresh() {
     }
     if (hint_) {
         lv_label_set_text(hint_, searching_ ? "Type to filter  ESC clear"
-                                            : "ENTER on/off  U use  S sign in  A acct  E set  I install");
+                                            : "ENTER use  D delete  S sign in  E set  I install");
     }
     const auto& plugins = view_model().plugins();
     visible_.clear();
@@ -176,11 +185,17 @@ void PluginsScreen::refresh() {
             name += "  " + plugin.version;
         }
         lv_label_set_text(names_[i], name.c_str());
-        std::string state = plugin.id == view_model().active_source_id()
-                                ? "Using"
-                                : (plugin.enabled ? "On" : "Off");
+        const bool selected = index == selected_;
+        lv_label_set_long_mode(names_[i], selected ? LV_LABEL_LONG_SCROLL_CIRCULAR : LV_LABEL_LONG_DOT);
+        std::string state;
+        if (plugin.id == view_model().active_source_id()) {
+            state = "Using";
+        }
+        else if (plugin.login) {
+            state = "Login *";
+        }
         lv_label_set_text(states_[i], state.c_str());
-        const bool on = index == selected_;
+        const bool on = selected;
         lv_obj_set_style_bg_opa(rows_[i], on ? LV_OPA_30 : LV_OPA_TRANSP, 0);
         lv_obj_set_style_bg_color(rows_[i], colors.primary, 0);
         lv_obj_set_style_border_width(rows_[i], on ? 2 : 0, 0);
@@ -193,6 +208,7 @@ void PluginsScreen::build_settings() {
     title_ = nullptr;
     hint_ = nullptr;
     empty_ = nullptr;
+    status_ = nullptr;
     lv_obj_clean(screen_content_);
     const auto colors = view::palette(view_model().is_dark_mode());
     auto* body = assets().load_standard_font(12);
@@ -407,8 +423,7 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
             refresh();
             return true;
         case LV_KEY_ENTER:
-            view_model().set_plugin_enabled(original(selected_),
-                                            !view_model().plugins()[original(selected_)].enabled);
+            view_model().use_plugin(original(selected_));
             return true;
         case 'g':
         case 'G': {
@@ -420,6 +435,20 @@ bool PluginsScreen::handle_key(std::uint32_t key, bool long_pressed) {
         case 'S':
             view_model().sign_in_plugin(original(selected_));
             return true;
+        case 'd':
+        case 'D': {
+            const std::size_t index = original(selected_);
+            if (pending_delete_ == selected_) {
+                pending_delete_ = -1;
+                view_model().remove_plugin(index);
+            }
+            else {
+                pending_delete_ = selected_;
+                const std::string text = "Press D again to remove " + view_model().plugins()[index].name;
+                lv_label_set_text(status_, text.c_str());
+            }
+            return true;
+        }
         case 'u':
         case 'U':
             view_model().use_plugin(original(selected_));

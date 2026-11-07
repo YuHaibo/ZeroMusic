@@ -110,7 +110,8 @@ BaseViewModel::BaseViewModel()
       lyrics_revision_subject_(0),
       quality_subject_("High"),
       normalize_subject_("Off"),
-      cache_subject_("512 MB"),
+      cache_subject_("3 GB"),
+      list_status_subject_(""),
       language_subject_("System"),
       plugins_revision_subject_(0),
       plugin_settings_revision_subject_(0),
@@ -215,6 +216,7 @@ lv_subject_t* BaseViewModel::duration_text_subject() { return duration_text_subj
 lv_subject_t* BaseViewModel::status_subject() { return status_subject_.native(); }
 lv_subject_t* BaseViewModel::list_title_subject() { return list_title_subject_.native(); }
 lv_subject_t* BaseViewModel::list_revision_subject() { return list_revision_subject_.native(); }
+lv_subject_t* BaseViewModel::list_status_subject() { return list_status_subject_.native(); }
 lv_subject_t* BaseViewModel::queue_revision_subject() { return queue_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::lyrics_revision_subject() { return lyrics_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::quality_subject() { return quality_subject_.native(); }
@@ -330,6 +332,7 @@ void BaseViewModel::browse(const std::string& page) {
 // page of that name, tries its all-songs page and then its Home before giving
 // up. The local source has Songs itself.
 void BaseViewModel::request_browse(const std::string& source, const std::string& page, int fallback) {
+    set_list_status("Loading...");
     client_.call("source.call",
                  ipc::Json{{"source", source},
                            {"method", "browse"},
@@ -342,6 +345,7 @@ void BaseViewModel::request_browse(const std::string& source, const std::string&
                 return;
             }
             clear_lists();
+            set_list_status("Error: " + message);
             fail(code, message);
             return;
         }
@@ -358,6 +362,7 @@ void BaseViewModel::search(const std::string& query, CollectionKind kind) {
         apply_tracks(ipc::Json::array(), "Search");
         return;
     }
+    set_list_status("Loading...");
     const std::string source = active_source_;
     const char* kind_name = kind == CollectionKind::Albums ? "albums"
                             : kind == CollectionKind::Artists ? "artists"
@@ -369,6 +374,7 @@ void BaseViewModel::search(const std::string& query, CollectionKind kind) {
                            {"params", ipc::Json{{"query", query}, {"kind", kind_name}, {"offset", 0}}}},
                  [this, kind, kind_name, query](const ipc::Json& result, const std::string& code, const std::string& message) {
         if (!code.empty()) {
+            set_list_status("Error: " + message);
             fail(code, message);
             return;
         }
@@ -405,12 +411,14 @@ void BaseViewModel::search(const std::string& query, CollectionKind kind) {
 
 void BaseViewModel::load_collection(CollectionKind kind) {
     collection_kind_ = kind;
+    set_list_status("Loading...");
     const std::string source = active_source_;
     if (kind == CollectionKind::Playlists) {
         client_.call("source.call",
                      ipc::Json{{"source", source}, {"method", "playlists"}, {"params", ipc::Json::object()}},
                      [this](const ipc::Json& result, const std::string& code, const std::string& message) {
             if (!code.empty()) {
+                set_list_status("Error: " + message);
                 fail(code, message);
                 return;
             }
@@ -428,6 +436,7 @@ void BaseViewModel::load_collection(CollectionKind kind) {
                 }
             }
             collection_ = std::move(items);
+            set_list_status(collection_.empty() ? "No playlists" : "");
             collection_revision_subject_.set(collection_revision_subject_.value() + 1);
         });
         return;
@@ -437,6 +446,7 @@ void BaseViewModel::load_collection(CollectionKind kind) {
                  ipc::Json{{"source", source}, {"method", "browse"}, {"params", ipc::Json{{"page", page}}}},
                  [this, kind](const ipc::Json& result, const std::string& code, const std::string& message) {
         if (!code.empty()) {
+            set_list_status("Error: " + message);
             fail(code, message);
             return;
         }
@@ -464,12 +474,14 @@ void BaseViewModel::load_collection(CollectionKind kind) {
 }
 
 void BaseViewModel::load_home() {
+    set_list_status("Loading...");
     const std::string source = active_source_;
     client_.call("source.call",
                  ipc::Json{{"source", source}, {"method", "home"}, {"params", ipc::Json::object()}},
                  [this](const ipc::Json& result, const std::string& code, const std::string& message) {
         if (!code.empty()) {
             clear_lists();
+            set_list_status("Error: " + message);
             fail(code, message);
             return;
         }
@@ -478,11 +490,13 @@ void BaseViewModel::load_home() {
 }
 
 void BaseViewModel::load_liked() {
+    set_list_status("Loading...");
     const std::string source = active_source_;
     client_.call("source.call",
                  ipc::Json{{"source", source}, {"method", "liked"}, {"params", ipc::Json{{"offset", 0}}}},
                  [this](const ipc::Json& result, const std::string& code, const std::string& message) {
         if (!code.empty()) {
+            set_list_status("Error: " + message);
             fail(code, message);
             return;
         }
@@ -491,11 +505,13 @@ void BaseViewModel::load_liked() {
 }
 
 void BaseViewModel::load_recent() {
+    set_list_status("Loading...");
     const std::string source = active_source_;
     client_.call("source.call",
                  ipc::Json{{"source", source}, {"method", "recent"}, {"params", ipc::Json::object()}},
                  [this](const ipc::Json& result, const std::string& code, const std::string& message) {
         if (!code.empty()) {
+            set_list_status("Error: " + message);
             fail(code, message);
             return;
         }
@@ -604,11 +620,14 @@ void BaseViewModel::toggle_normalize() {
 }
 
 void BaseViewModel::cycle_cache() {
-    if (cache_mb_ == 512) cache_mb_ = 1024;
-    else if (cache_mb_ == 1024) cache_mb_ = 256;
-    else if (cache_mb_ == 256) cache_mb_ = 0;
-    else cache_mb_ = 512;
-    cache_subject_.set((std::to_string(cache_mb_) + " MB").c_str());
+    if (cache_mb_ == 3072) cache_mb_ = 4096;
+    else if (cache_mb_ == 4096) cache_mb_ = 0;
+    else if (cache_mb_ == 0) cache_mb_ = 512;
+    else if (cache_mb_ == 512) cache_mb_ = 1024;
+    else if (cache_mb_ == 1024) cache_mb_ = 2048;
+    else cache_mb_ = 3072;
+    cache_subject_.set((cache_mb_ >= 1024 ? std::to_string(cache_mb_ / 1024) + " GB"
+                                          : std::to_string(cache_mb_) + " MB").c_str());
     client_.call("settings.set", ipc::Json{{"cacheMB", cache_mb_}});
 }
 
@@ -635,6 +654,7 @@ void BaseViewModel::cycle_source() {
     active_source_ = sources_[at].first;
     model_.set_source_name(sources_[at].second);
     source_subject_.set(sources_[at].second.c_str());
+    client_.call("settings.set", ipc::Json{{"lastSource", active_source_}});
     clear_lists();
     sources_revision_subject_.set(sources_revision_subject_.value() + 1);
 }
@@ -661,6 +681,7 @@ void BaseViewModel::load_plugins() {
                 item.version = plugin.value("version", "");
                 item.enabled = plugin.value("enabled", true);
                 item.granted = plugin.value("granted", false);
+                item.login = plugin.value("signIn", false);
                 if (plugin.contains("permissions") && plugin["permissions"].contains("process")) {
                     const auto& process = plugin["permissions"]["process"];
                     item.process = process.is_array() ? !process.empty() : process.get<bool>();
@@ -689,6 +710,10 @@ void BaseViewModel::set_plugin_enabled(std::size_t index, bool on) {
     });
 }
 
+void BaseViewModel::set_list_status(const std::string& status) {
+    list_status_subject_.set(status.c_str());
+}
+
 void BaseViewModel::clear_lists() {
     tracks_.clear();
     collection_.clear();
@@ -708,6 +733,10 @@ void BaseViewModel::use_plugin(std::size_t index) {
     active_source_ = plugins_[index].id;
     model_.set_source_name(plugins_[index].name);
     source_subject_.set(plugins_[index].name.c_str());
+    if (!plugins_[index].enabled) {
+        client_.call("sources.setEnabled", ipc::Json{{"id", plugins_[index].id}, {"on", true}});
+    }
+    client_.call("settings.set", ipc::Json{{"lastSource", plugins_[index].id}});
     clear_lists();
     sources_revision_subject_.set(sources_revision_subject_.value() + 1);
     const std::string text = "Using " + plugins_[index].name;
@@ -800,6 +829,24 @@ void BaseViewModel::sign_out_account() {
             return;
         }
         account_subject_.set("Not signed in");
+        load_plugins();
+    });
+}
+
+void BaseViewModel::remove_plugin(std::size_t index) {
+    if (index >= plugins_.size()) {
+        return;
+    }
+    const std::string id = plugins_[index].id;
+    client_.call("plugin.remove", ipc::Json{{"id", id}},
+                 [this, id](const ipc::Json&, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        const std::string text = "Removed " + id;
+        status_subject_.set(text.c_str());
+        model_.set_status(text);
         load_plugins();
     });
 }
@@ -1008,16 +1055,7 @@ void BaseViewModel::on_connected() {
         status_subject_.set("Ready");
         model_.set_status("Ready");
         LOG_INFO("core connected: {} {}", result.value("app", "Zero Music"), result.value("version", ""));
-        client_.call("sources.list", ipc::Json::object(),
-                     [this](const ipc::Json& data, const std::string& error, const std::string& text) {
-            if (error.empty()) {
-                apply_sources(data);
-            }
-            else {
-                fail(error, text);
-            }
-        });
-        load_plugins();
+        // Settings first: lastSource decides which source the list picks.
         client_.call("settings.get", ipc::Json::object(),
                      [this](const ipc::Json& data, const std::string& error, const std::string& text) {
             if (error.empty()) {
@@ -1026,7 +1064,17 @@ void BaseViewModel::on_connected() {
             else {
                 fail(error, text);
             }
+            client_.call("sources.list", ipc::Json::object(),
+                         [this](const ipc::Json& list, const std::string& code, const std::string& message) {
+                if (code.empty()) {
+                    apply_sources(list);
+                }
+                else {
+                    fail(code, message);
+                }
+            });
         });
+        load_plugins();
         refresh();
     });
 }
@@ -1173,6 +1221,7 @@ void BaseViewModel::apply_sources(const ipc::Json& sources) {
     if (!sources.is_array()) {
         return;
     }
+    const std::string previous_source = active_source_;
     bool chose = false;
     for (const auto& source : sources) {
         if (!source.value("enabled", true)) {
@@ -1198,6 +1247,9 @@ void BaseViewModel::apply_sources(const ipc::Json& sources) {
             }
         }
     }
+    if (active_source_ != previous_source) {
+        clear_lists();
+    }
     sources_.clear();
     for (const auto& source : sources) {
         if (source.value("enabled", true)) {
@@ -1222,6 +1274,7 @@ void BaseViewModel::apply_browse(const ipc::Json& browse) {
         }
     }
     tracks_ = std::move(items);
+    set_list_status(tracks_.empty() ? "No songs in this page" : "");
     list_revision_subject_.set(list_revision_subject_.value() + 1);
 }
 
@@ -1235,6 +1288,7 @@ void BaseViewModel::apply_tracks(const ipc::Json& tracks, const std::string& tit
         }
     }
     tracks_ = std::move(items);
+    set_list_status(tracks_.empty() ? "No results" : "");
     list_revision_subject_.set(list_revision_subject_.value() + 1);
 }
 
@@ -1253,8 +1307,10 @@ void BaseViewModel::apply_settings(const ipc::Json& settings) {
     quality_subject_.set(quality_label(quality_).c_str());
     normalize_ = settings.value("normalize", false);
     normalize_subject_.set(normalize_ ? "On" : "Off");
-    cache_mb_ = settings.value("cacheMB", 512);
-    cache_subject_.set((std::to_string(cache_mb_) + " MB").c_str());
+    cache_mb_ = settings.value("cacheMB", 3072);
+    cache_subject_.set((cache_mb_ >= 1024 ? std::to_string(cache_mb_ / 1024) + " GB"
+                                          : std::to_string(cache_mb_) + " MB").c_str());
+    preferred_source_ = settings.value("lastSource", preferred_source_);
     language_ = settings.value("language", "system");
     language_subject_.set(language_label(language_).c_str());
 }

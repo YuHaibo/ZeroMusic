@@ -50,6 +50,7 @@ private:
     std::array<lv_obj_t*, 6> rows_{};
     std::array<lv_obj_t*, 6> titles_{};
     std::array<lv_obj_t*, 6> subtitles_{};
+    lv_obj_t* status_{nullptr};
     int menu_selected_ = 0;
     int selected_ = 0;
     int offset_ = 0;

@@ -27,7 +27,7 @@ func DefaultSettings() Settings {
 		Normalize: false,
 		Volume:    0.8,
 		Repeat:    0,
-		CacheMB:   512,
+		CacheMB:   3072,
 	}
 }
 
