@@ -88,13 +88,22 @@ cmake --build build/dev -j8
 ./build/dev/zero-music --socket .run/zero-music.sock
 ```
 
-未做：列表/滚动、Browse/Search/Detail/Lyrics/Queue/Settings/Plugins/Sign-in
-页面、封面图片帧、文本输入。
+### M4 本地库（已开始）
+
+- 新增 `src/view/widgets/track_list`：6 行焦点列表、上下移动、Enter 播放、
+  滚动窗口、时长显示。
+- Browse 页读取当前源的 `browse "songs"`，支持本地库与插件源。
+- Search 页支持 ASCII 输入、Backspace、Enter 查询；结果用同一列表，
+  Enter 播放整张结果队列并从选中项开始。
+- 截图：[Browse](../screenshot/zero-music-browse.png) /
+  [Search](../screenshot/zero-music-search.png)。
+
+未做：专辑/艺人/歌单详情、歌词页、队列页、中文输入、封面图、Settings/
+Plugins/Sign-in 页面。
 
 ## 下一步
 
-1. **M4**：本地库 Browse/Search/Detail/Lyrics/Queue（列表组件、焦点、
-   滚动、文本输入）。
+1. **M4 剩余**：Detail/Lyrics/Queue、专辑/艺人/歌单、封面图。
 2. **M5**：Plugins/Settings/Sign-in 页面与插件安装。
 3. **M2 剩余**：`plugin.install/update/remove`、GitHub 安装、图片服务、
    `scan.progress`。

@@ -6,9 +6,11 @@
 
 #include "screen_manager.h"
 
+#include "browse_screen.h"
 #include "home_screen.h"
 #include "message_screen.h"
 #include "now_playing_screen.h"
+#include "search_screen.h"
 
 namespace app {
 namespace {
@@ -108,6 +110,12 @@ void ScreenManager::flush_requested_page() {
             break;
         case model::AppPage::NowPlaying:
             load_screen(std::make_unique<screen::NowPlayingScreen>(view_model_, assets_), requested_page_);
+            break;
+        case model::AppPage::Browse:
+            load_screen(std::make_unique<screen::BrowseScreen>(view_model_, assets_), requested_page_);
+            break;
+        case model::AppPage::Search:
+            load_screen(std::make_unique<screen::SearchScreen>(view_model_, assets_), requested_page_);
             break;
         default: {
             const auto text = placeholder_for(requested_page_);

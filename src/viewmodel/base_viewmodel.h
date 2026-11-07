@@ -17,6 +17,18 @@
 
 namespace viewmodel {
 
+// TrackItem is a row the list screens show, with what the core needs to play
+// it later.
+struct TrackItem {
+    std::string id;
+    std::string name;
+    std::string artist;
+    std::string album;
+    std::string source;
+    std::int64_t duration_ms = 0;
+    ipc::Json json;
+};
+
 // BaseViewModel is what the screens bind to and the keys act on. It keeps the
 // core's answers in the model and publishes them as subjects.
 class BaseViewModel {
@@ -69,12 +81,26 @@ public:
     void toggle_shuffle();
     void refresh();
 
+    // browse opens a source page, such as "songs"; search queries the active
+    // source. Both fill tracks(), and bump list_revision() when they do.
+    void browse(const std::string& page = "songs");
+    void search(const std::string& query);
+    const std::vector<TrackItem>& tracks() const { return tracks_; }
+    std::size_t track_count() const { return tracks_.size(); }
+    const std::string& list_title() const { return list_title_; }
+    void play_at(std::size_t index);
+
+    lv_subject_t* list_title_subject();
+    lv_subject_t* list_revision_subject();
+
 private:
     void on_event(const std::string& name, const ipc::Json& data);
     void on_connected();
     void apply_state(const ipc::Json& state);
     void apply_sources(const ipc::Json& sources);
     void apply_settings(const ipc::Json& settings);
+    void apply_browse(const ipc::Json& browse);
+    void apply_tracks(const ipc::Json& tracks, const std::string& title);
     void apply_connection_status();
     void fail(const std::string& code, const std::string& message);
     void publish_all();
@@ -88,6 +114,8 @@ private:
     int repeat_ = 0;
     bool shuffle_ = false;
     bool hello_sent_ = false;
+    std::string list_title_ = "Songs";
+    std::vector<TrackItem> tracks_;
 
     reactive::StringSubject<32> title_subject_;
     reactive::StringSubject<32> source_subject_;
@@ -97,6 +125,8 @@ private:
     reactive::StringSubject<16> position_text_subject_;
     reactive::StringSubject<16> duration_text_subject_;
     reactive::StringSubject<64> status_subject_;
+    reactive::StringSubject<32> list_title_subject_;
+    reactive::IntSubject list_revision_subject_;
     reactive::IntSubject progress_subject_;
     reactive::BoolSubject playing_subject_;
     reactive::BoolSubject connected_subject_;

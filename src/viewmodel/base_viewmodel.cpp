@@ -33,6 +33,23 @@ std::string join_artists(const ipc::Json& track) {
     return names;
 }
 
+TrackItem parse_track(const ipc::Json& track, const std::string& source) {
+    TrackItem item;
+    item.id = track.value("id", "");
+    item.name = track.value("name", "");
+    item.artist = join_artists(track);
+    if (track.contains("album") && track["album"].is_object()) {
+        item.album = track["album"].value("name", "");
+    }
+    item.source = track.value("source", source);
+    item.duration_ms = track.value("duration", static_cast<std::int64_t>(0));
+    item.json = track;
+    if (!item.json.contains("source") || item.json["source"].empty()) {
+        item.json["source"] = item.source;
+    }
+    return item;
+}
+
 std::string format_time(std::int64_t ms) {
     if (ms < 0) {
         ms = 0;
@@ -57,6 +74,8 @@ BaseViewModel::BaseViewModel()
       position_text_subject_("0:00"),
       duration_text_subject_("0:00"),
       status_subject_("Waiting for core…"),
+      list_title_subject_("Songs"),
+      list_revision_subject_(0),
       progress_subject_(0),
       playing_subject_(false),
       connected_subject_(false),
@@ -67,10 +86,23 @@ BaseViewModel::BaseViewModel()
       dark_mode_subject_(model_.dark_mode()),
       current_page_subject_(page_to_int(model_.current_page())),
       quit_requested_subject_(false) {
-    if (const char* start = std::getenv("ZERO_MUSIC_START_PAGE"); start && std::string(start) == "now-playing") {
-        stack_ = {model::AppPage::NowPlaying};
-        model_.set_current_page(model::AppPage::NowPlaying);
-        current_page_subject_.set(page_to_int(model::AppPage::NowPlaying));
+    if (const char* start = std::getenv("ZERO_MUSIC_START_PAGE"); start) {
+        const std::string page(start);
+        if (page == "now-playing") {
+            stack_ = {model::AppPage::NowPlaying};
+            model_.set_current_page(model::AppPage::NowPlaying);
+            current_page_subject_.set(page_to_int(model::AppPage::NowPlaying));
+        }
+        else if (page == "browse") {
+            stack_ = {model::AppPage::Browse};
+            model_.set_current_page(model::AppPage::Browse);
+            current_page_subject_.set(page_to_int(model::AppPage::Browse));
+        }
+        else if (page == "search") {
+            stack_ = {model::AppPage::Search};
+            model_.set_current_page(model::AppPage::Search);
+            current_page_subject_.set(page_to_int(model::AppPage::Search));
+        }
     }
     client_.set_event_handler([this](const std::string& name, const ipc::Json& data) {
         on_event(name, data);
@@ -97,6 +129,8 @@ lv_subject_t* BaseViewModel::track_album_subject() { return track_album_subject_
 lv_subject_t* BaseViewModel::position_text_subject() { return position_text_subject_.native(); }
 lv_subject_t* BaseViewModel::duration_text_subject() { return duration_text_subject_.native(); }
 lv_subject_t* BaseViewModel::status_subject() { return status_subject_.native(); }
+lv_subject_t* BaseViewModel::list_title_subject() { return list_title_subject_.native(); }
+lv_subject_t* BaseViewModel::list_revision_subject() { return list_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::progress_subject() { return progress_subject_.native(); }
 lv_subject_t* BaseViewModel::playing_subject() { return playing_subject_.native(); }
 lv_subject_t* BaseViewModel::connected_subject() { return connected_subject_.native(); }
@@ -186,6 +220,56 @@ void BaseViewModel::toggle_shuffle() {
     model_.set_shuffle(shuffle_);
     shuffle_subject_.set(shuffle_);
     client_.call("player.shuffle", ipc::Json{{"on", shuffle_}});
+}
+
+void BaseViewModel::browse(const std::string& page) {
+    const std::string source = active_source_;
+    client_.call("source.call",
+                 ipc::Json{{"source", source},
+                           {"method", "browse"},
+                           {"params", ipc::Json{{"page", page}}}},
+                  [this](const ipc::Json& result, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        apply_browse(result);
+    });
+}
+
+void BaseViewModel::search(const std::string& query) {
+    if (query.empty()) {
+        apply_tracks(ipc::Json::array(), "Search");
+        return;
+    }
+    const std::string source = active_source_;
+    client_.call("source.call",
+                 ipc::Json{{"source", source},
+                           {"method", "search"},
+                           {"params", ipc::Json{{"query", query}, {"kind", "tracks"}, {"offset", 0}}}},
+                  [this, query](const ipc::Json& result, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        apply_tracks(result.contains("tracks") ? result["tracks"] : ipc::Json::array(),
+                     "Results: " + query);
+    });
+}
+
+void BaseViewModel::play_at(std::size_t index) {
+    if (index >= tracks_.size()) {
+        return;
+    }
+    ipc::Json queue = ipc::Json::array();
+    for (const auto& track : tracks_) {
+        queue.push_back(track.json);
+    }
+    client_.call("player.playTracks",
+                 ipc::Json{{"source", tracks_[index].source.empty() ? active_source_ : tracks_[index].source},
+                           {"tracks", queue},
+                           {"start", static_cast<std::int64_t>(index)}});
+    show_page(model::AppPage::NowPlaying);
 }
 
 void BaseViewModel::refresh() {
@@ -360,6 +444,37 @@ void BaseViewModel::apply_sources(const ipc::Json& sources) {
             source_subject_.set(name.c_str());
         }
     }
+}
+
+void BaseViewModel::apply_browse(const ipc::Json& browse) {
+    list_title_ = browse.value("title", "Songs");
+    list_title_subject_.set(list_title_.c_str());
+    std::vector<TrackItem> items;
+    if (browse.contains("sections") && browse["sections"].is_array()) {
+        for (const auto& section : browse["sections"]) {
+            if (!section.contains("tracks") || !section["tracks"].is_array()) {
+                continue;
+            }
+            for (const auto& track : section["tracks"]) {
+                items.push_back(parse_track(track, active_source_));
+            }
+        }
+    }
+    tracks_ = std::move(items);
+    list_revision_subject_.set(list_revision_subject_.value() + 1);
+}
+
+void BaseViewModel::apply_tracks(const ipc::Json& tracks, const std::string& title) {
+    list_title_ = title;
+    list_title_subject_.set(list_title_.c_str());
+    std::vector<TrackItem> items;
+    if (tracks.is_array()) {
+        for (const auto& track : tracks) {
+            items.push_back(parse_track(track, active_source_));
+        }
+    }
+    tracks_ = std::move(items);
+    list_revision_subject_.set(list_revision_subject_.value() + 1);
 }
 
 void BaseViewModel::apply_settings(const ipc::Json& settings) {

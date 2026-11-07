@@ -11,7 +11,9 @@
     ],
     "screenshots": [
       "screenshot/zero-music-home.png",
-      "screenshot/zero-music-now-playing.png"
+      "screenshot/zero-music-now-playing.png",
+      "screenshot/zero-music-browse.png",
+      "screenshot/zero-music-search.png"
     ],
     "icon": "assets/images/zero-music.png",
     "license": "AGPL-3.0",
