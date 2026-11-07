@@ -662,6 +662,24 @@ void BaseViewModel::set_plugin_enabled(std::size_t index, bool on) {
     });
 }
 
+void BaseViewModel::use_plugin(std::size_t index) {
+    if (index >= plugins_.size()) {
+        return;
+    }
+    if (!plugins_[index].enabled) {
+        set_plugin_enabled(index, true);
+        status_subject_.set("Enabled; press U again to use it");
+        return;
+    }
+    active_source_ = plugins_[index].id;
+    model_.set_source_name(plugins_[index].name);
+    source_subject_.set(plugins_[index].name.c_str());
+    sources_revision_subject_.set(sources_revision_subject_.value() + 1);
+    const std::string text = "Using " + plugins_[index].name;
+    status_subject_.set(text.c_str());
+    model_.set_status(text);
+}
+
 void BaseViewModel::grant_plugin(std::size_t index, bool on) {
     if (index >= plugins_.size()) {
         return;

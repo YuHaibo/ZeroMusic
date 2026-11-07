@@ -144,6 +144,7 @@ public:
     const std::vector<PluginItem>& plugins() const { return plugins_; }
     void load_plugins();
     void set_plugin_enabled(std::size_t index, bool on);
+    void use_plugin(std::size_t index);
     void grant_plugin(std::size_t index, bool on);
     void sign_in_plugin(std::size_t index);
     void install_plugin(const std::string& repo);

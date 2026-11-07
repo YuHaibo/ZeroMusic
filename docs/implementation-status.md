@@ -106,7 +106,7 @@ cmake --build build/dev -j8
 - Lyrics 页显示当前行及前后行，自动跟随播放，上下可手动滚动；core 在歌词
   加载后补发一次完整 `player.state`。
 - Settings 页可调音量、源、音质、缓存、语言，并触发重扫。
-- Plugins 页列出插件、Enter 启停、`G` 授权 process、`S` 登录、
+- Plugins 页列出插件、Enter 启停、`U` 切换为当前音源、`G` 授权 process、`S` 登录、
   `E` 打开插件设置；设置值用 ASCII 键盘编辑，Enter 保存。
 - Plugins 页 `I` 打开安装页：默认列出 GitHub 话题
   `mygo-music-plugin` 的公开仓库（`plugin.available`），上下选择、Enter
@@ -179,7 +179,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 已验证产物（2026-11-07）：
 
 - `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
-  `d6660e4361c8ba12ed6b26805d3ad7bada6dd01cbb124c5d47a21b3c9870f19a`；
+  `9ad206573d948c407101cf8e4d42a575488247044131ad1cd86fddf8285388da`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与
