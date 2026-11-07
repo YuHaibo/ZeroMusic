@@ -134,7 +134,7 @@ cmake --build build/dev -j8
   标题/艺人/专辑超长时横向滚动，不再遮挡。
 - 默认专辑封面使用应用图标图片；换曲时先回到默认图。
 - 安装页右上状态宽度加大，不再压到列表。
-- 应用图标改为用户提供的转盘图，黑色背景。
+- 应用图标使用用户提供的像素音乐符（黑底），并用于默认专辑封面。
 - 截图更新：[Now Playing](../screenshot/zero-music-now-playing.png)。
 - Plugins 页 `I` 打开安装页：默认列出 GitHub 话题
   `mygo-music-plugin` 的公开仓库（`plugin.available`），上下选择、Enter
@@ -212,7 +212,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 已验证产物（2026-11-07）：
 
 - `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
-  `78d27d6b8a537e13bb473224ed20011ac379383b11bf97d376f436b25d36f07c`；
+  `f18eaced57a0f8e019b81a3015dab3756e59f4e824b1117ca6bce87dceec77e1`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与
