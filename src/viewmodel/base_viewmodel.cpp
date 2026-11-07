@@ -113,6 +113,7 @@ BaseViewModel::BaseViewModel()
       cache_subject_("512 MB"),
       language_subject_("System"),
       plugins_revision_subject_(0),
+      plugin_settings_revision_subject_(0),
       prompt_qr_subject_(""),
       prompt_text_subject_("Start sign-in from Plugins"),
       cover_revision_subject_(0),
@@ -208,6 +209,7 @@ lv_subject_t* BaseViewModel::normalize_subject() { return normalize_subject_.nat
 lv_subject_t* BaseViewModel::cache_subject() { return cache_subject_.native(); }
 lv_subject_t* BaseViewModel::language_subject() { return language_subject_.native(); }
 lv_subject_t* BaseViewModel::plugins_revision_subject() { return plugins_revision_subject_.native(); }
+lv_subject_t* BaseViewModel::plugin_settings_revision_subject() { return plugin_settings_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::prompt_qr_subject() { return prompt_qr_subject_.native(); }
 lv_subject_t* BaseViewModel::prompt_text_subject() { return prompt_text_subject_.native(); }
 lv_subject_t* BaseViewModel::cover_revision_subject() { return cover_revision_subject_.native(); }
@@ -596,6 +598,52 @@ void BaseViewModel::grant_plugin(std::size_t index, bool on) {
             fail(code, message);
         }
         load_plugins();
+    });
+}
+
+void BaseViewModel::load_plugin_settings(std::size_t index) {
+    if (index >= plugins_.size()) {
+        return;
+    }
+    plugin_settings_id_ = plugins_[index].id;
+    client_.call("plugin.settings", ipc::Json{{"source", plugin_settings_id_}},
+                 [this](const ipc::Json& result, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        std::vector<PluginSetting> settings;
+        const auto values = result.value("values", ipc::Json::object());
+        if (result.contains("settings") && result["settings"].is_array()) {
+            for (const auto& entry : result["settings"]) {
+                PluginSetting setting;
+                setting.key = entry.value("key", "");
+                setting.label = entry.value("label", setting.key);
+                if (values.contains(setting.key)) {
+                    setting.value = values[setting.key].is_string() ? values[setting.key].get<std::string>()
+                                                                    : values[setting.key].dump();
+                }
+                settings.push_back(std::move(setting));
+            }
+        }
+        plugin_settings_ = std::move(settings);
+        plugin_settings_revision_subject_.set(plugin_settings_revision_subject_.value() + 1);
+    });
+}
+
+void BaseViewModel::save_plugin_setting(std::size_t index, const std::string& value) {
+    if (index >= plugin_settings_.size() || plugin_settings_id_.empty()) {
+        return;
+    }
+    plugin_settings_[index].value = value;
+    plugin_settings_revision_subject_.set(plugin_settings_revision_subject_.value() + 1);
+    const std::string key = plugin_settings_[index].key;
+    client_.call("plugin.setSetting",
+                 ipc::Json{{"source", plugin_settings_id_}, {"key", key}, {"value", value}},
+                 [this](const ipc::Json&, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+        }
     });
 }
 

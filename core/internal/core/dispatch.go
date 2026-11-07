@@ -491,13 +491,20 @@ func (a *App) saveSettingsSoon() {
 }
 
 func (a *App) pluginSettings(raw json.RawMessage) (any, error) {
-	p, err := decodeParams[idParams](raw)
+	p, err := decodeParams[struct {
+		ID     string `json:"id"`
+		Source string `json:"source"`
+	}](raw)
 	if err != nil {
 		return nil, err
 	}
-	src := a.sourceOf(p.ID)
+	id := p.ID
+	if id == "" {
+		id = p.Source
+	}
+	src := a.sourceOf(id)
 	if src == nil {
-		return nil, ipc.Errorf(ipc.CodeUnavailable, "no such source: %s", p.ID)
+		return nil, ipc.Errorf(ipc.CodeUnavailable, "no such source: %s", id)
 	}
 	info := src.Info()
 	values := make(map[string]string, len(info.Settings))

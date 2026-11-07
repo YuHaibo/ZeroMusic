@@ -44,6 +44,13 @@ struct CollectionItem {
     std::string subtitle;
 };
 
+// PluginSetting is one value a plugin asks the listener for.
+struct PluginSetting {
+    std::string key;
+    std::string label;
+    std::string value;
+};
+
 // PluginItem is a row of the plugin manager.
 struct PluginItem {
     std::string id;
@@ -130,7 +137,11 @@ public:
     void set_plugin_enabled(std::size_t index, bool on);
     void grant_plugin(std::size_t index, bool on);
     void sign_in_plugin(std::size_t index);
+    void load_plugin_settings(std::size_t index);
+    void save_plugin_setting(std::size_t index, const std::string& value);
+    const std::vector<PluginSetting>& plugin_settings() const { return plugin_settings_; }
     lv_subject_t* plugins_revision_subject();
+    lv_subject_t* plugin_settings_revision_subject();
     lv_subject_t* prompt_qr_subject();
     lv_subject_t* prompt_text_subject();
     const std::string& quality() const { return quality_; }
@@ -205,6 +216,8 @@ private:
     std::vector<LyricItem> lyrics_;
     std::string track_id_;
     std::vector<PluginItem> plugins_;
+    std::vector<PluginSetting> plugin_settings_;
+    std::string plugin_settings_id_;
     std::vector<CollectionItem> collection_;
     CollectionKind collection_kind_ = CollectionKind::Albums;
     std::vector<std::uint8_t> cover_data_;
@@ -229,6 +242,7 @@ private:
     reactive::StringSubject<32> cache_subject_;
     reactive::StringSubject<32> language_subject_;
     reactive::IntSubject plugins_revision_subject_;
+    reactive::IntSubject plugin_settings_revision_subject_;
     reactive::StringSubject<512> prompt_qr_subject_;
     reactive::StringSubject<256> prompt_text_subject_;
     reactive::IntSubject cover_revision_subject_;

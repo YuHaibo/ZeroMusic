@@ -9,6 +9,7 @@
 #include "base_screen.h"
 
 #include <array>
+#include <string>
 
 namespace screen {
 
@@ -24,8 +25,25 @@ protected:
     void build_content(lv_obj_t* content) override;
 
 private:
-    void refresh();
+    enum class Mode {
+        List,
+        Settings,
+    };
 
+    void build_list();
+    void build_settings();
+    void refresh();
+    void refresh_settings();
+
+    Mode mode_ = Mode::List;
+    lv_obj_t* screen_content_{nullptr};
+    int edit_selected_ = 0;
+    bool editing_ = false;
+    bool auto_settings_ = false;
+    std::string edit_buffer_;
+    std::array<lv_obj_t*, 6> setting_rows_{};
+    std::array<lv_obj_t*, 6> setting_labels_{};
+    std::array<lv_obj_t*, 6> setting_values_{};
     std::array<lv_obj_t*, 6> rows_{};
     std::array<lv_obj_t*, 6> names_{};
     std::array<lv_obj_t*, 6> states_{};

@@ -102,7 +102,8 @@ cmake --build build/dev -j8
 - Lyrics 页显示当前行及前后行，自动跟随播放，上下可手动滚动；core 在歌词
   加载后补发一次完整 `player.state`。
 - Settings 页可调音量、源、音质、缓存、语言，并触发重扫。
-- Plugins 页列出插件、Enter 启停、`G` 授权 process、`S` 登录。
+- Plugins 页列出插件、Enter 启停、`G` 授权 process、`S` 登录、
+  `E` 打开插件设置；设置值用 ASCII 键盘编辑，Enter 保存。
 - Sign-in 页用 LVGL 内置 QRCode 渲染 `plugin.prompt.qr`，文本来自
   `plugin.prompt.text`。
 - core 新增 `player.remove`，以及 `plugin.install` / `update` / `remove`
@@ -123,7 +124,7 @@ cmake --build build/dev -j8
 - 截图：[Albums](../screenshot/zero-music-albums.png) /
   [Detail](../screenshot/zero-music-detail.png)。
 
-未做：插件设置表单、安装输入页。
+未做：GitHub 安装输入页。
 v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 
 ### M6 构建与打包（已开始）
@@ -146,7 +147,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 
 ## 下一步
 
-1. **M5 剩余**：插件设置表单、安装输入页。
+1. **M5 剩余**：GitHub 安装输入页、账户展示。
 2. **M2 剩余**：`scan.progress`、图片磁盘缓存/并发限制。
 3. **M6 剩余**：cp0-cross 构建、`.deb` 实际打包与安装验证、
    APPLaunch 真机启动/退出、内存与帧率。
