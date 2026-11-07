@@ -31,18 +31,20 @@ private:
         Menu,
         Songs,
         Collection,
+        Liked,
     };
 
     void build_menu();
     void build_songs();
     void build_collection();
+    void build_liked();
     void refresh_menu();
     void refresh_collection();
 
     Mode mode_ = Mode::Menu;
     lv_obj_t* content_{nullptr};
     std::unique_ptr<view::widgets::TrackList> list_;
-    std::array<lv_obj_t*, 4> menu_rows_{};
+    std::array<lv_obj_t*, 5> menu_rows_{};
     std::array<lv_obj_t*, 6> rows_{};
     std::array<lv_obj_t*, 6> titles_{};
     std::array<lv_obj_t*, 6> subtitles_{};

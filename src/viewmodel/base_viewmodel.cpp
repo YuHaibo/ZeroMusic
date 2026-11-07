@@ -413,6 +413,19 @@ void BaseViewModel::load_collection(CollectionKind kind) {
     });
 }
 
+void BaseViewModel::load_liked() {
+    const std::string source = active_source_;
+    client_.call("source.call",
+                 ipc::Json{{"source", source}, {"method", "liked"}, {"params", ipc::Json{{"offset", 0}}}},
+                 [this](const ipc::Json& result, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        apply_tracks(result.contains("tracks") ? result["tracks"] : ipc::Json::array(), "Liked");
+    });
+}
+
 void BaseViewModel::open_collection_item(std::size_t index) {
     if (index >= collection_.size()) {
         return;

@@ -121,11 +121,13 @@ cmake --build build/dev -j8
   （协议里图片用 base64 JSON，未走二进制帧；尺寸小，先这样。）
 - 截图更新为带封面的 Now Playing。
 
-- Browse 增加 Songs/Albums/Artists/Playlists 入口；专辑、艺人、歌单列表
+- Browse 增加 Songs/Albums/Artists/Playlists/Liked 入口；专辑、艺人、歌单列表
   通过 `browse albums|artists|playlists` 与 `album|artist|playlist` 拉取。
+- Liked 页读取 `liked`，Enter 播放。
 - Detail 页显示专辑/艺人/歌单名称与曲目，Enter 从选中曲目播放。
 - 截图：[Albums](../screenshot/zero-music-albums.png) /
-  [Detail](../screenshot/zero-music-detail.png)。
+  [Detail](../screenshot/zero-music-detail.png) /
+  [Liked](../screenshot/zero-music-liked.png)。
 
 - Plugins 页 `I` 打开 GitHub 安装输入页，输入 `owner/repo` 后 Enter 安装；
   进度经 `plugin.install` 事件显示。

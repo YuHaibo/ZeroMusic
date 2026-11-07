@@ -28,7 +28,7 @@ constexpr std::array<Entry, 3> kCollections = {{
     {"Playlists", viewmodel::CollectionKind::Playlists},
 }};
 
-constexpr std::array<const char*, 4> kMenu = {{"Songs", "Albums", "Artists", "Playlists"}};
+constexpr std::array<const char*, 5> kMenu = {{"Songs", "Albums", "Artists", "Playlists", "Liked"}};
 
 void connected_changed(lv_observer_t* observer, lv_subject_t* subject) {
     auto* screen = static_cast<BrowseScreen*>(lv_observer_get_user_data(observer));
@@ -53,6 +53,11 @@ void BrowseScreen::build_content(lv_obj_t* content) {
         if (page == "songs") {
             menu_selected_ = 0;
             build_songs();
+            return;
+        }
+        if (page == "liked") {
+            menu_selected_ = 4;
+            build_liked();
             return;
         }
         menu_selected_ = page == "artists" ? 2 : (page == "playlists" ? 3 : 1);
@@ -80,7 +85,7 @@ void BrowseScreen::build_menu() {
         auto* row = lv_obj_create(content_);
         lv_obj_remove_style_all(row);
         lv_obj_set_size(row, 300, 22);
-        lv_obj_align(row, LV_ALIGN_TOP_LEFT, 10, 22 + i * 24);
+        lv_obj_align(row, LV_ALIGN_TOP_LEFT, 10, 20 + i * 23);
         lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
         lv_obj_set_style_radius(row, 3, 0);
         menu_rows_[i] = row;
@@ -113,6 +118,16 @@ void BrowseScreen::build_songs() {
     list_->build();
     lv_subject_add_observer_obj(view_model().sources_revision_subject(), connected_changed, content_, this);
     view_model().browse("songs");
+}
+
+void BrowseScreen::build_liked() {
+    mode_ = Mode::Liked;
+    lv_obj_clean(content_);
+    menu_rows_ = {};
+    list_ = std::make_unique<view::widgets::TrackList>(content_, view_model(), assets());
+    list_->build();
+    lv_subject_add_observer_obj(view_model().sources_revision_subject(), connected_changed, content_, this);
+    view_model().load_liked();
 }
 
 void BrowseScreen::build_collection() {
@@ -201,6 +216,9 @@ void BrowseScreen::reload() {
     if (mode_ == Mode::Songs) {
         view_model().browse("songs");
     }
+    else if (mode_ == Mode::Liked) {
+        view_model().load_liked();
+    }
     else if (mode_ == Mode::Collection) {
         menu_selected_ = std::clamp(menu_selected_, 1, 3);
         view_model().load_collection(kCollections[menu_selected_ - 1].kind);
@@ -231,16 +249,19 @@ bool BrowseScreen::handle_key(std::uint32_t key, bool long_pressed) {
     if (mode_ == Mode::Menu) {
         switch (key) {
             case LV_KEY_UP:
-                menu_selected_ = (menu_selected_ + 3) % 4;
+                menu_selected_ = (menu_selected_ + static_cast<int>(kMenu.size()) - 1) % static_cast<int>(kMenu.size());
                 refresh_menu();
                 return true;
             case LV_KEY_DOWN:
-                menu_selected_ = (menu_selected_ + 1) % 4;
+                menu_selected_ = (menu_selected_ + 1) % static_cast<int>(kMenu.size());
                 refresh_menu();
                 return true;
             case LV_KEY_ENTER:
                 if (menu_selected_ == 0) {
                     build_songs();
+                }
+                else if (menu_selected_ == 4) {
+                    build_liked();
                 }
                 else {
                     build_collection();
@@ -250,7 +271,7 @@ bool BrowseScreen::handle_key(std::uint32_t key, bool long_pressed) {
                 return false;
         }
     }
-    if (mode_ == Mode::Songs) {
+    if (mode_ == Mode::Songs || mode_ == Mode::Liked) {
         return list_ && list_->handle_key(key, false);
     }
     const int count = static_cast<int>(view_model().collection().size());
