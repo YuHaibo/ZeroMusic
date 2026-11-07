@@ -433,6 +433,66 @@ func (p *Player) Prev() {
 
 // Jump plays the queue's track i, the listener's pick: one that can't play
 // stays, saying why.
+// Remove takes the queue's track i out, playing what follows it when it was
+// the one that played.
+func (p *Player) Remove(i int) {
+	if i < 0 || i >= len(p.queue) {
+		return
+	}
+	pos := -1
+	for j, v := range p.order {
+		if v == i {
+			pos = j
+			break
+		}
+	}
+	if pos < 0 {
+		return
+	}
+	current := pos == p.at
+	curIndex := -1
+	if !current && p.track != nil && p.at >= 0 && p.at < len(p.order) {
+		curIndex = p.order[p.at]
+	}
+	p.queue = append(p.queue[:i], p.queue[i+1:]...)
+	order := make([]int, 0, len(p.order)-1)
+	for _, v := range p.order {
+		if v == i {
+			continue
+		}
+		if v > i {
+			v--
+		}
+		order = append(order, v)
+	}
+	p.order = order
+	if current {
+		p.stop()
+		p.gen++
+		p.track = nil
+		if p.at >= len(p.order) {
+			p.at = len(p.order) - 1
+		}
+		if p.at < 0 {
+			p.playing, p.loading, p.err = false, false, ""
+			p.sync()
+			return
+		}
+		p.load(p.at)
+		return
+	}
+	if pos < p.at {
+		p.at--
+	}
+	if curIndex > i {
+		curIndex--
+	}
+	if curIndex >= 0 && curIndex < len(p.queue) {
+		p.track = &p.queue[curIndex]
+	}
+	p.sync()
+}
+
 func (p *Player) Jump(i int) {
 	for k, v := range p.order {
 		if v == i {
@@ -775,6 +835,7 @@ func (p *Player) loadLyrics(gen int, src music.Source, t music.Track) {
 			if gen == p.gen {
 				p.lyrics = lines
 				p.lyricsLoaded = true
+				p.sync()
 			}
 		})
 	}()

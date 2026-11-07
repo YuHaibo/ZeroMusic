@@ -29,6 +29,22 @@ struct TrackItem {
     ipc::Json json;
 };
 
+// PluginItem is a row of the plugin manager.
+struct PluginItem {
+    std::string id;
+    std::string name;
+    std::string version;
+    bool enabled = false;
+    bool granted = false;
+    bool process = false;
+};
+
+// LyricItem is a timed line, as the core parsed it.
+struct LyricItem {
+    std::int64_t time_ms = 0;
+    std::string text;
+};
+
 // BaseViewModel is what the screens bind to and the keys act on. It keeps the
 // core's answers in the model and publishes them as subjects.
 class BaseViewModel {
@@ -81,6 +97,25 @@ public:
     void toggle_shuffle();
     void refresh();
 
+    void cycle_quality();
+    void toggle_normalize();
+    void cycle_cache();
+    void cycle_language();
+    void rescan();
+
+    const std::vector<PluginItem>& plugins() const { return plugins_; }
+    void load_plugins();
+    void set_plugin_enabled(std::size_t index, bool on);
+    void grant_plugin(std::size_t index, bool on);
+    void sign_in_plugin(std::size_t index);
+    lv_subject_t* plugins_revision_subject();
+    lv_subject_t* prompt_qr_subject();
+    lv_subject_t* prompt_text_subject();
+    const std::string& quality() const { return quality_; }
+    bool normalize() const { return normalize_; }
+    int cache_mb() const { return cache_mb_; }
+    const std::string& language() const { return language_; }
+
     // browse opens a source page, such as "songs"; search queries the active
     // source. Both fill tracks(), and bump list_revision() when they do.
     void browse(const std::string& page = "songs");
@@ -90,8 +125,23 @@ public:
     const std::string& list_title() const { return list_title_; }
     void play_at(std::size_t index);
 
+    // queue is what plays, in play order; queue_at is the current row. Lyrics
+    // are the current track's, when the source had any.
+    const std::vector<TrackItem>& queue() const { return queue_view_; }
+    int queue_at() const { return queue_at_; }
+    void play_queue_at(std::size_t order_index);
+    void remove_queue_at(std::size_t order_index);
+    const std::vector<LyricItem>& lyrics() const { return lyrics_; }
+    std::int64_t position_ms() const { return position_ms_; }
+
     lv_subject_t* list_title_subject();
     lv_subject_t* list_revision_subject();
+    lv_subject_t* queue_revision_subject();
+    lv_subject_t* lyrics_revision_subject();
+    lv_subject_t* quality_subject();
+    lv_subject_t* normalize_subject();
+    lv_subject_t* cache_subject();
+    lv_subject_t* language_subject();
 
 private:
     void on_event(const std::string& name, const ipc::Json& data);
@@ -114,8 +164,18 @@ private:
     int repeat_ = 0;
     bool shuffle_ = false;
     bool hello_sent_ = false;
+    std::string quality_ = "high";
+    bool normalize_ = false;
+    int cache_mb_ = 512;
+    std::string language_ = "system";
     std::string list_title_ = "Songs";
     std::vector<TrackItem> tracks_;
+    std::vector<TrackItem> queue_view_;
+    std::vector<int> queue_indices_;
+    int queue_at_ = -1;
+    std::vector<LyricItem> lyrics_;
+    std::string track_id_;
+    std::vector<PluginItem> plugins_;
 
     reactive::StringSubject<32> title_subject_;
     reactive::StringSubject<32> source_subject_;
@@ -127,6 +187,15 @@ private:
     reactive::StringSubject<64> status_subject_;
     reactive::StringSubject<32> list_title_subject_;
     reactive::IntSubject list_revision_subject_;
+    reactive::IntSubject queue_revision_subject_;
+    reactive::IntSubject lyrics_revision_subject_;
+    reactive::StringSubject<32> quality_subject_;
+    reactive::StringSubject<32> normalize_subject_;
+    reactive::StringSubject<32> cache_subject_;
+    reactive::StringSubject<32> language_subject_;
+    reactive::IntSubject plugins_revision_subject_;
+    reactive::StringSubject<512> prompt_qr_subject_;
+    reactive::StringSubject<256> prompt_text_subject_;
     reactive::IntSubject progress_subject_;
     reactive::BoolSubject playing_subject_;
     reactive::BoolSubject connected_subject_;

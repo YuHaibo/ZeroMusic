@@ -202,6 +202,12 @@ private:
                 case '8':
                     view_model_.cycle_repeat();
                     return true;
+                case '9':
+                    view_model_.show_page(model::AppPage::Queue);
+                    return true;
+                case '0':
+                    view_model_.show_page(model::AppPage::Lyrics);
+                    return true;
                 default:
                     break;
             }

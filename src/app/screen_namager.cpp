@@ -8,9 +8,14 @@
 
 #include "browse_screen.h"
 #include "home_screen.h"
+#include "lyrics_screen.h"
 #include "message_screen.h"
 #include "now_playing_screen.h"
+#include "plugins_screen.h"
+#include "queue_screen.h"
+#include "settings_screen.h"
 #include "search_screen.h"
+#include "signin_screen.h"
 
 namespace app {
 namespace {
@@ -121,6 +126,21 @@ void ScreenManager::flush_requested_page() {
             break;
         case model::AppPage::Search:
             load_screen(std::make_unique<screen::SearchScreen>(view_model_, assets_), requested_page_);
+            break;
+        case model::AppPage::Queue:
+            load_screen(std::make_unique<screen::QueueScreen>(view_model_, assets_), requested_page_);
+            break;
+        case model::AppPage::Lyrics:
+            load_screen(std::make_unique<screen::LyricsScreen>(view_model_, assets_), requested_page_);
+            break;
+        case model::AppPage::Settings:
+            load_screen(std::make_unique<screen::SettingsScreen>(view_model_, assets_), requested_page_);
+            break;
+        case model::AppPage::Plugins:
+            load_screen(std::make_unique<screen::PluginsScreen>(view_model_, assets_), requested_page_);
+            break;
+        case model::AppPage::SignIn:
+            load_screen(std::make_unique<screen::SignInScreen>(view_model_, assets_), requested_page_);
             break;
         default: {
             const auto text = placeholder_for(requested_page_);

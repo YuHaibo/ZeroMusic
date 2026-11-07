@@ -76,6 +76,15 @@ BaseViewModel::BaseViewModel()
       status_subject_("Waiting for core…"),
       list_title_subject_("Songs"),
       list_revision_subject_(0),
+      queue_revision_subject_(0),
+      lyrics_revision_subject_(0),
+      quality_subject_("High"),
+      normalize_subject_("Off"),
+      cache_subject_("512 MB"),
+      language_subject_("System"),
+      plugins_revision_subject_(0),
+      prompt_qr_subject_(""),
+      prompt_text_subject_("Start sign-in from Plugins"),
       progress_subject_(0),
       playing_subject_(false),
       connected_subject_(false),
@@ -102,6 +111,31 @@ BaseViewModel::BaseViewModel()
             stack_ = {model::AppPage::Search};
             model_.set_current_page(model::AppPage::Search);
             current_page_subject_.set(page_to_int(model::AppPage::Search));
+        }
+        else if (page == "queue") {
+            stack_ = {model::AppPage::Queue};
+            model_.set_current_page(model::AppPage::Queue);
+            current_page_subject_.set(page_to_int(model::AppPage::Queue));
+        }
+        else if (page == "lyrics") {
+            stack_ = {model::AppPage::Lyrics};
+            model_.set_current_page(model::AppPage::Lyrics);
+            current_page_subject_.set(page_to_int(model::AppPage::Lyrics));
+        }
+        else if (page == "settings") {
+            stack_ = {model::AppPage::Settings};
+            model_.set_current_page(model::AppPage::Settings);
+            current_page_subject_.set(page_to_int(model::AppPage::Settings));
+        }
+        else if (page == "plugins") {
+            stack_ = {model::AppPage::Plugins};
+            model_.set_current_page(model::AppPage::Plugins);
+            current_page_subject_.set(page_to_int(model::AppPage::Plugins));
+        }
+        else if (page == "signin") {
+            stack_ = {model::AppPage::SignIn};
+            model_.set_current_page(model::AppPage::SignIn);
+            current_page_subject_.set(page_to_int(model::AppPage::SignIn));
         }
     }
     client_.set_event_handler([this](const std::string& name, const ipc::Json& data) {
@@ -131,6 +165,15 @@ lv_subject_t* BaseViewModel::duration_text_subject() { return duration_text_subj
 lv_subject_t* BaseViewModel::status_subject() { return status_subject_.native(); }
 lv_subject_t* BaseViewModel::list_title_subject() { return list_title_subject_.native(); }
 lv_subject_t* BaseViewModel::list_revision_subject() { return list_revision_subject_.native(); }
+lv_subject_t* BaseViewModel::queue_revision_subject() { return queue_revision_subject_.native(); }
+lv_subject_t* BaseViewModel::lyrics_revision_subject() { return lyrics_revision_subject_.native(); }
+lv_subject_t* BaseViewModel::quality_subject() { return quality_subject_.native(); }
+lv_subject_t* BaseViewModel::normalize_subject() { return normalize_subject_.native(); }
+lv_subject_t* BaseViewModel::cache_subject() { return cache_subject_.native(); }
+lv_subject_t* BaseViewModel::language_subject() { return language_subject_.native(); }
+lv_subject_t* BaseViewModel::plugins_revision_subject() { return plugins_revision_subject_.native(); }
+lv_subject_t* BaseViewModel::prompt_qr_subject() { return prompt_qr_subject_.native(); }
+lv_subject_t* BaseViewModel::prompt_text_subject() { return prompt_text_subject_.native(); }
 lv_subject_t* BaseViewModel::progress_subject() { return progress_subject_.native(); }
 lv_subject_t* BaseViewModel::playing_subject() { return playing_subject_.native(); }
 lv_subject_t* BaseViewModel::connected_subject() { return connected_subject_.native(); }
@@ -272,6 +315,155 @@ void BaseViewModel::play_at(std::size_t index) {
     show_page(model::AppPage::NowPlaying);
 }
 
+void BaseViewModel::play_queue_at(std::size_t order_index) {
+    if (order_index >= queue_indices_.size()) {
+        return;
+    }
+    const int index = queue_indices_[order_index];
+    client_.call("player.jump", ipc::Json{{"index", index}});
+    show_page(model::AppPage::NowPlaying);
+}
+
+namespace {
+
+std::string quality_label(const std::string& quality) {
+    if (quality == "standard") return "Standard";
+    if (quality == "lossless") return "Lossless";
+    return "High";
+}
+
+std::string language_label(const std::string& language) {
+    if (language == "en") return "English";
+    if (language == "zh-CN") return "简体中文";
+    return "System";
+}
+
+} // namespace
+
+void BaseViewModel::cycle_quality() {
+    if (quality_ == "standard") quality_ = "high";
+    else if (quality_ == "high") quality_ = "lossless";
+    else quality_ = "standard";
+    quality_subject_.set(quality_label(quality_).c_str());
+    client_.call("settings.set", ipc::Json{{"quality", quality_}});
+}
+
+void BaseViewModel::toggle_normalize() {
+    normalize_ = !normalize_;
+    normalize_subject_.set(normalize_ ? "On" : "Off");
+    client_.call("settings.set", ipc::Json{{"normalize", normalize_}});
+}
+
+void BaseViewModel::cycle_cache() {
+    if (cache_mb_ == 512) cache_mb_ = 1024;
+    else if (cache_mb_ == 1024) cache_mb_ = 256;
+    else if (cache_mb_ == 256) cache_mb_ = 0;
+    else cache_mb_ = 512;
+    cache_subject_.set((std::to_string(cache_mb_) + " MB").c_str());
+    client_.call("settings.set", ipc::Json{{"cacheMB", cache_mb_}});
+}
+
+void BaseViewModel::cycle_language() {
+    if (language_ == "system") language_ = "en";
+    else if (language_ == "en") language_ = "zh-CN";
+    else language_ = "system";
+    language_subject_.set(language_label(language_).c_str());
+    client_.call("settings.set", ipc::Json{{"language", language_}});
+}
+
+void BaseViewModel::rescan() {
+    client_.call("library.rescan", ipc::Json::object());
+    status_subject_.set("Scanning…");
+    model_.set_status("Scanning…");
+}
+
+void BaseViewModel::load_plugins() {
+    client_.call("plugins.list", ipc::Json::object(),
+                 [this](const ipc::Json& result, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        std::vector<PluginItem> plugins;
+        if (result.is_array()) {
+            for (const auto& plugin : result) {
+                PluginItem item;
+                item.id = plugin.value("id", "");
+                item.name = plugin.value("name", item.id);
+                item.version = plugin.value("version", "");
+                item.enabled = plugin.value("enabled", true);
+                item.granted = plugin.value("granted", false);
+                if (plugin.contains("permissions") && plugin["permissions"].contains("process")) {
+                    const auto& process = plugin["permissions"]["process"];
+                    item.process = process.is_array() ? !process.empty() : process.get<bool>();
+                }
+                plugins.push_back(std::move(item));
+            }
+        }
+        plugins_ = std::move(plugins);
+        plugins_revision_subject_.set(plugins_revision_subject_.value() + 1);
+    });
+}
+
+void BaseViewModel::set_plugin_enabled(std::size_t index, bool on) {
+    if (index >= plugins_.size()) {
+        return;
+    }
+    const std::string id = plugins_[index].id;
+    plugins_[index].enabled = on;
+    plugins_revision_subject_.set(plugins_revision_subject_.value() + 1);
+    client_.call("sources.setEnabled", ipc::Json{{"id", id}, {"on", on}},
+                 [this](const ipc::Json&, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+        }
+        load_plugins();
+    });
+}
+
+void BaseViewModel::grant_plugin(std::size_t index, bool on) {
+    if (index >= plugins_.size()) {
+        return;
+    }
+    const std::string id = plugins_[index].id;
+    client_.call("plugin.grant", ipc::Json{{"id", id}, {"on", on}},
+                 [this](const ipc::Json&, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+        }
+        load_plugins();
+    });
+}
+
+void BaseViewModel::sign_in_plugin(std::size_t index) {
+    if (index >= plugins_.size()) {
+        return;
+    }
+    const std::string id = plugins_[index].id;
+    prompt_qr_subject_.set("");
+    prompt_text_subject_.set("Waiting for the code…");
+    show_page(model::AppPage::SignIn);
+    client_.call("plugin.signIn", ipc::Json{{"id", id}},
+                 [this, id](const ipc::Json&, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+        }
+        else {
+            model_.set_status("Signed in to " + id);
+            status_subject_.set(model_.status().c_str());
+        }
+        load_plugins();
+    });
+}
+
+void BaseViewModel::remove_queue_at(std::size_t order_index) {
+    if (order_index >= queue_indices_.size()) {
+        return;
+    }
+    client_.call("player.remove", ipc::Json{{"index", queue_indices_[order_index]}});
+    refresh();
+}
+
 void BaseViewModel::refresh() {
     client_.call("player.state", ipc::Json::object(), [this](const ipc::Json& result,
                                                              const std::string& code,
@@ -309,6 +501,8 @@ void BaseViewModel::on_event(const std::string& name, const ipc::Json& data) {
     }
     else if (name == "plugin.prompt") {
         const std::string text = data.value("text", "Scan the code to sign in");
+        prompt_qr_subject_.set(data.value("qr", "").c_str());
+        prompt_text_subject_.set(text.c_str());
         model_.set_status(text);
         status_subject_.set(text.c_str());
     }
@@ -350,6 +544,7 @@ void BaseViewModel::on_connected() {
                 fail(error, text);
             }
         });
+        load_plugins();
         client_.call("settings.get", ipc::Json::object(),
                      [this](const ipc::Json& data, const std::string& error, const std::string& text) {
             if (error.empty()) {
@@ -380,6 +575,12 @@ void BaseViewModel::apply_state(const ipc::Json& state) {
         shown.source = track.value("source", "");
         shown.duration_ms = track.value("duration", static_cast<std::int64_t>(0));
     }
+    const std::string new_id = track.is_object() ? track.value("id", "") : "";
+    if (!new_id.empty() && new_id != track_id_) {
+        lyrics_.clear();
+        lyrics_revision_subject_.set(lyrics_revision_subject_.value() + 1);
+    }
+    track_id_ = new_id;
     model_.set_track(shown);
     has_track_subject_.set(shown.valid);
     if (shown.valid) {
@@ -413,6 +614,49 @@ void BaseViewModel::apply_state(const ipc::Json& state) {
     shuffle_ = state.value("shuffle", false);
     model_.set_shuffle(shuffle_);
     shuffle_subject_.set(shuffle_);
+
+    if (state.contains("queue") && state["queue"].is_array()) {
+        std::vector<TrackItem> raw;
+        for (const auto& track : state["queue"]) {
+            raw.push_back(parse_track(track, active_source_));
+        }
+        std::vector<int> order;
+        if (state.contains("order") && state["order"].is_array()) {
+            for (const auto& index : state["order"]) {
+                order.push_back(index.get<int>());
+            }
+        }
+        queue_view_.clear();
+        queue_indices_.clear();
+        if (!order.empty() && order.size() == raw.size()) {
+            for (const int index : order) {
+                if (index < 0 || index >= static_cast<int>(raw.size())) {
+                    continue;
+                }
+                queue_view_.push_back(raw[static_cast<std::size_t>(index)]);
+                queue_indices_.push_back(index);
+            }
+        }
+        else {
+            for (std::size_t i = 0; i < raw.size(); ++i) {
+                queue_view_.push_back(raw[i]);
+                queue_indices_.push_back(static_cast<int>(i));
+            }
+        }
+        queue_at_ = state.value("at", -1);
+        queue_revision_subject_.set(queue_revision_subject_.value() + 1);
+    }
+
+    if (state.contains("lyrics") && state["lyrics"].is_array()) {
+        lyrics_.clear();
+        for (const auto& line : state["lyrics"]) {
+            LyricItem item;
+            item.time_ms = static_cast<std::int64_t>(line.value("time", 0.0) * 1000.0);
+            item.text = line.value("text", "");
+            lyrics_.push_back(std::move(item));
+        }
+        lyrics_revision_subject_.set(lyrics_revision_subject_.value() + 1);
+    }
 
     const std::string error = state.value("error", "");
     model_.set_error(error);
@@ -488,6 +732,14 @@ void BaseViewModel::apply_settings(const ipc::Json& settings) {
     repeat_ = settings.value("repeat", 0);
     model_.set_repeat(repeat_);
     repeat_subject_.set(repeat_);
+    quality_ = settings.value("quality", "high");
+    quality_subject_.set(quality_label(quality_).c_str());
+    normalize_ = settings.value("normalize", false);
+    normalize_subject_.set(normalize_ ? "On" : "Off");
+    cache_mb_ = settings.value("cacheMB", 512);
+    cache_subject_.set((std::to_string(cache_mb_) + " MB").c_str());
+    language_ = settings.value("language", "system");
+    language_subject_.set(language_label(language_).c_str());
 }
 
 void BaseViewModel::apply_connection_status() {

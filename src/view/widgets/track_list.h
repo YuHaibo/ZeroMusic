@@ -22,7 +22,15 @@ namespace view::widgets {
 // the keys that move through them and play one.
 class TrackList : public BaseWidgets {
 public:
-    TrackList(lv_obj_t* parent, viewmodel::BaseViewModel& view_model, app::AssetManager& assets);
+    enum class Kind {
+        Tracks,
+        Queue,
+    };
+
+    TrackList(lv_obj_t* parent,
+              viewmodel::BaseViewModel& view_model,
+              app::AssetManager& assets,
+              Kind kind = Kind::Tracks);
 
     void build() override;
     bool handle_key(std::uint32_t key, bool long_pressed);
@@ -32,6 +40,7 @@ private:
 
     viewmodel::BaseViewModel& view_model_;
     app::AssetManager& assets_;
+    Kind kind_;
     lv_obj_t* title_{nullptr};
     std::array<lv_obj_t*, 6> rows_{};
     std::array<lv_obj_t*, 6> names_{};

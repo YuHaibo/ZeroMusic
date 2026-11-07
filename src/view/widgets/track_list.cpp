@@ -41,8 +41,11 @@ void revision_changed(lv_observer_t* observer, lv_subject_t*) {
 
 } // namespace
 
-TrackList::TrackList(lv_obj_t* parent, viewmodel::BaseViewModel& view_model, app::AssetManager& assets)
-    : BaseWidgets(parent), view_model_(view_model), assets_(assets) {}
+TrackList::TrackList(lv_obj_t* parent,
+                     viewmodel::BaseViewModel& view_model,
+                     app::AssetManager& assets,
+                     Kind kind)
+    : BaseWidgets(parent), view_model_(view_model), assets_(assets), kind_(kind) {}
 
 void TrackList::build() {
     if (core_obj_) {
@@ -96,14 +99,21 @@ void TrackList::build() {
         lv_obj_set_style_text_color(times_[i], colors.text_disabled, 0);
     }
 
-    lv_subject_add_observer_obj(view_model_.list_revision_subject(), revision_changed, core_obj_, this);
+    lv_subject_add_observer_obj(kind_ == Kind::Queue ? view_model_.queue_revision_subject()
+                                                     : view_model_.list_revision_subject(),
+                                revision_changed,
+                                core_obj_,
+                                this);
     refresh();
 }
 
 void TrackList::refresh() {
     const auto colors = view::palette(view_model_.is_dark_mode());
-    const auto& tracks = view_model_.tracks();
+    const auto& tracks = kind_ == Kind::Queue ? view_model_.queue() : view_model_.tracks();
     const int count = static_cast<int>(tracks.size());
+    if (kind_ == Kind::Queue && view_model_.queue_at() >= 0) {
+        selected_ = view_model_.queue_at();
+    }
     if (count > 0) {
         selected_ = std::clamp(selected_, 0, count - 1);
         if (selected_ < offset_) {
@@ -144,7 +154,7 @@ bool TrackList::handle_key(std::uint32_t key, bool long_pressed) {
     if (long_pressed) {
         return false;
     }
-    const int count = static_cast<int>(view_model_.tracks().size());
+    const int count = static_cast<int>((kind_ == Kind::Queue ? view_model_.queue() : view_model_.tracks()).size());
     if (key == 0) {
         refresh();
         return true;
@@ -161,8 +171,19 @@ bool TrackList::handle_key(std::uint32_t key, bool long_pressed) {
             selected_ = (selected_ + 1) % count;
             refresh();
             return true;
+        case LV_KEY_BACKSPACE:
+            if (kind_ == Kind::Queue) {
+                view_model_.remove_queue_at(static_cast<std::size_t>(selected_));
+                return true;
+            }
+            return false;
         case LV_KEY_ENTER:
-            view_model_.play_at(static_cast<std::size_t>(selected_));
+            if (kind_ == Kind::Queue) {
+                view_model_.play_queue_at(static_cast<std::size_t>(selected_));
+            }
+            else {
+                view_model_.play_at(static_cast<std::size_t>(selected_));
+            }
             return true;
         default:
             return false;

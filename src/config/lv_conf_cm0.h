@@ -163,3 +163,6 @@
 /* fbdev draw buffers are allocated by LVGL; keep alignment compatible with lv_malloc. */
 #define LV_DRAW_BUF_ALIGN                  4
 #define LV_DRAW_BUF_STRIDE_ALIGN           4
+
+/* Sign-in QR codes are drawn by LVGL itself. */
+#define LV_USE_QRCODE 1

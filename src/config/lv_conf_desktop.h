@@ -195,3 +195,6 @@
 #define LV_USE_SHADOW                      1
 #define LV_USE_GRADIENTS                   1
 #define LV_OBJ_STYLE_CACHE                 1
+
+/* Sign-in QR codes are drawn by LVGL itself. */
+#define LV_USE_QRCODE 1

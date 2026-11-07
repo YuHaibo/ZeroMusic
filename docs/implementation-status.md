@@ -98,8 +98,21 @@ cmake --build build/dev -j8
 - 截图：[Browse](../screenshot/zero-music-browse.png) /
   [Search](../screenshot/zero-music-search.png)。
 
-未做：专辑/艺人/歌单详情、歌词页、队列页、中文输入、封面图、Settings/
-Plugins/Sign-in 页面。
+- Queue 页按播放顺序显示队列，Enter 跳转，Backspace 删除。
+- Lyrics 页显示当前行及前后行，自动跟随播放，上下可手动滚动；core 在歌词
+  加载后补发一次完整 `player.state`。
+- Settings 页可调音量、音质、响度归一、缓存、语言，并触发重扫。
+- Plugins 页列出插件、Enter 启停、`G` 授权 process、`S` 登录。
+- Sign-in 页用 LVGL 内置 QRCode 渲染 `plugin.prompt.qr`，文本来自
+  `plugin.prompt.text`。
+- core 新增 `player.remove`，以及 `plugin.install` / `update` / `remove`
+  （GitHub `owner/repo`，后台下载，完成后重载源）。
+- 截图：[Queue](../screenshot/zero-music-queue.png) /
+  [Lyrics](../screenshot/zero-music-lyrics.png) /
+  [Settings](../screenshot/zero-music-settings.png) /
+  [Plugins](../screenshot/zero-music-plugins.png)。
+
+未做：专辑/艺人/歌单详情、中文输入、封面图、插件设置表单、安装输入页。
 
 ### M6 构建与打包（已开始）
 
@@ -120,11 +133,10 @@ Plugins/Sign-in 页面。
 
 ## 下一步
 
-1. **M4 剩余**：Detail/Lyrics/Queue、专辑/艺人/歌单、封面图。
-2. **M5**：Plugins/Settings/Sign-in 页面与插件安装。
-3. **M2 剩余**：`plugin.install/update/remove`、GitHub 安装、图片服务、
-   `scan.progress`。
-4. **M6 剩余**：cp0-cross 构建、`.deb` 实际打包与安装验证、
+1. **M4/M5 剩余**：Detail（专辑/艺人/歌单）、封面图、插件设置表单、
+   安装输入页、中文输入。
+2. **M2 剩余**：图片服务（fetch → RGB565 → 缓存）、`scan.progress`。
+3. **M6 剩余**：cp0-cross 构建、`.deb` 实际打包与安装验证、
    APPLaunch 真机启动/退出、内存与帧率。
 
 ## 开发命令

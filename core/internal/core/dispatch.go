@@ -261,7 +261,11 @@ func (a *App) onLoop(method string, raw json.RawMessage) (any, error) {
 		if err != nil {
 			return nil, err
 		}
-		return nil, ipc.Errorf(ipc.CodeUnsupported, "removing track %d is not implemented yet", p.Index)
+		if p.Index < 0 || p.Index >= len(a.pl.Queue()) {
+			return nil, ipc.Errorf(ipc.CodeInvalid, "no track %d in the queue", p.Index)
+		}
+		a.pl.Remove(p.Index)
+		return struct{}{}, nil
 	case "player.state":
 		return a.state(true), nil
 
@@ -363,8 +367,35 @@ func (a *App) onLoop(method string, raw json.RawMessage) (any, error) {
 		}
 		a.publishEvent("sources.changed", a.sources())
 		return a.pluginsInfo(), nil
-	case "plugin.install", "plugin.update", "plugin.remove":
-		return nil, ipc.Errorf(ipc.CodeUnsupported, "plugins are not installed yet")
+	case "plugin.install":
+		p, err := decodeParams[struct {
+			Repo string `json:"repo"`
+		}](raw)
+		if err != nil {
+			return nil, err
+		}
+		if err := a.installPlugin(p.Repo); err != nil {
+			return nil, err
+		}
+		return map[string]bool{"started": true}, nil
+	case "plugin.update":
+		p, err := decodeParams[idParams](raw)
+		if err != nil {
+			return nil, err
+		}
+		if err := a.updatePlugin(p.ID); err != nil {
+			return nil, err
+		}
+		return map[string]bool{"started": true}, nil
+	case "plugin.remove":
+		p, err := decodeParams[idParams](raw)
+		if err != nil {
+			return nil, err
+		}
+		if err := a.removePlugin(p.ID); err != nil {
+			return nil, err
+		}
+		return struct{}{}, nil
 
 	case "ping":
 		return map[string]bool{"ok": true}, nil

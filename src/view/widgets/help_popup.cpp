@@ -24,7 +24,7 @@ struct HelpRow {
 constexpr std::array<HelpRow, 5> kRows = {{
     {"SPACE / 6", "Play or pause"},
     {"5 / 7", "Previous / next"},
-    {"4", "Now Playing"},
+    {"4 / 9 / 0", "Now Playing / Queue / Lyrics"},
     {"8", "Repeat mode"},
     {"HOLD ESC", "Exit"},
 }};

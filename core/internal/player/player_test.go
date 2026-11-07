@@ -304,3 +304,22 @@ func TestPrevSkipsBack(t *testing.T) {
 		t.Errorf("next went to %s, playing %v", p.Current().ID, p.Playing())
 	}
 }
+
+// Removing a track before the current one keeps playing the same track, at
+// its new place in the queue.
+func TestRemoveOther(t *testing.T) {
+	p := &Player{at: 1}
+	p.Cue([]music.Track{{ID: "1"}, {ID: "2"}, {ID: "3"}})
+	p.at = 1
+	p.track = &p.queue[1]
+	p.Remove(0)
+	if len(p.queue) != 2 || p.queue[0].ID != "2" || p.queue[1].ID != "3" {
+		t.Fatalf("queue: %+v", p.queue)
+	}
+	if p.at != 0 || p.Current() == nil || p.Current().ID != "2" {
+		t.Fatalf("at %d, current %+v", p.at, p.Current())
+	}
+	if len(p.order) != 2 || p.order[0] != 0 || p.order[1] != 1 {
+		t.Fatalf("order: %v", p.order)
+	}
+}

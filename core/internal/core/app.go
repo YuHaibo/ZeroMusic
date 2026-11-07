@@ -40,6 +40,7 @@ type App struct {
 	pl          *player.Player
 	plugins     []*plugin.Plugin
 	pluginsByID map[string]*plugin.Plugin
+	installMu   sync.Mutex
 
 	tasks chan task
 	quit  chan struct{}

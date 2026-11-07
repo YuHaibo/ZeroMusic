@@ -101,3 +101,62 @@ func (a *App) setSourceEnabled(id string, on bool) error {
 }
 
 func (a *App) pluginMap() map[string]*plugin.Plugin { return a.pluginsByID }
+
+// installPlugin downloads a GitHub repository's latest release in the
+// background, then reloads the sources on the loop.
+func (a *App) installPlugin(repo string) error {
+	parsed, err := plugin.ParseRepo(repo)
+	if err != nil {
+		return err
+	}
+	if !a.installMu.TryLock() {
+		return fmt.Errorf("another plugin is being installed")
+	}
+	a.publishEvent("plugin.install", map[string]any{"repo": parsed, "phase": "download", "progress": 0})
+	go func() {
+		defer a.installMu.Unlock()
+		pending, err := plugin.Fetch(parsed, a.dirs.PluginsDir())
+		if err != nil {
+			a.publishEvent("plugin.install", map[string]any{"repo": parsed, "phase": "error", "error": err.Error()})
+			return
+		}
+		id := pending.Manifest.ID
+		if err := pending.Install(a.dirs.PluginsDir()); err != nil {
+			a.publishEvent("plugin.install", map[string]any{"id": id, "phase": "error", "error": err.Error()})
+			return
+		}
+		a.publishEvent("plugin.install", map[string]any{"id": id, "phase": "done", "progress": 1})
+		a.post(func() {
+			a.loadPlugins()
+			a.publishEvent("sources.changed", a.sources())
+		})
+	}()
+	return nil
+}
+
+func (a *App) updatePlugin(id string) error {
+	pl := a.pluginsByID[id]
+	if pl == nil {
+		return fmt.Errorf("no such plugin: %s", id)
+	}
+	origin := pl.Origin()
+	if origin == nil {
+		return fmt.Errorf("%s was not installed from a repository", id)
+	}
+	return a.installPlugin(origin.Repo)
+}
+
+func (a *App) removePlugin(id string) error {
+	pl := a.pluginsByID[id]
+	if pl == nil {
+		return fmt.Errorf("no such plugin: %s", id)
+	}
+	name := pl.Info().Name
+	if err := pl.Remove(nil); err != nil {
+		return err
+	}
+	a.loadPlugins()
+	a.publishEvent("sources.changed", a.sources())
+	a.publishEvent("toast", map[string]any{"text": "Removed " + name, "kind": "success"})
+	return nil
+}
