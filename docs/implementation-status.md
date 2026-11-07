@@ -141,7 +141,8 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 - 已验证：`cmake --build` 同时构建 UI 与 Go core；wrapper 启动/退出全流程
   正常，core 收到信号后删除 socket。
 
-未验证：`cp0-cross` 交叉构建与 `.deb`（需要 BSP SDK）。
+已验证 Go core 的 `GOOS=linux GOARCH=arm64` 交叉编译（`scripts/build-core.sh`）。
+未验证：`cp0-cross` 的 C++/LVGL 交叉构建与 `.deb`（需要 BSP SDK）。
 
 ## 下一步
 
