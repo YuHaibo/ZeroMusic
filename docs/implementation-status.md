@@ -136,6 +136,11 @@ cmake --build build/dev -j8
   自动切回文本输入，方向键仍可用。
 - 设备 evdev 键位补齐：字母、数字、空格、回车、退格、Tab、方向键与
   常用符号，支持 ASCII 搜索与插件设置输入。
+- Browse 增加 Home/Songs/Albums/Artists/Playlists/Liked 入口；Home 调用
+  插件的 `home`，插件没有 `browse songs` 时 Songs 自动回退 `all` 再 `home`。
+- 实测无需登录的 `djyde/mygo-lizhi`、`popeyelau/mygo-queyue`、
+  `bitbyte404/mygo-music-kugou-lite`、`nimrc/mygo-chensheng`：插件可加载，
+  `home` 返回可播放曲目；lizhi 曲目实际播放成功。
 - Browse 增加 Songs/Albums/Artists/Playlists/Liked 入口；专辑、艺人、歌单列表
   通过 `browse albums|artists|playlists` 与 `album|artist|playlist` 拉取。
 - Liked 页读取 `liked`，Enter 播放。
@@ -179,7 +184,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 已验证产物（2026-11-07）：
 
 - `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
-  `9ad206573d948c407101cf8e4d42a575488247044131ad1cd86fddf8285388da`；
+  `dae11a007fd42983c446267ad8b3b3d56a38daaf4d65d3194c49e8ce797ce687`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与

@@ -323,13 +323,24 @@ void BaseViewModel::toggle_shuffle() {
 }
 
 void BaseViewModel::browse(const std::string& page) {
-    const std::string source = active_source_;
+    request_browse(active_source_, page, page == "songs" ? 2 : 0);
+}
+
+// request_browse asks for a page, and for a plugin's Songs, which often has no
+// page of that name, tries its all-songs page and then its Home before giving
+// up. The local source has Songs itself.
+void BaseViewModel::request_browse(const std::string& source, const std::string& page, int fallback) {
     client_.call("source.call",
                  ipc::Json{{"source", source},
                            {"method", "browse"},
                            {"params", ipc::Json{{"page", page}}}},
-                  [this](const ipc::Json& result, const std::string& code, const std::string& message) {
+                 [this, source, page, fallback](const ipc::Json& result, const std::string& code, const std::string& message) {
         if (!code.empty()) {
+            if (fallback > 0 && source != "local") {
+                const std::string next = (page == "songs" && fallback == 2) ? "all" : "home";
+                request_browse(source, next, fallback - 1);
+                return;
+            }
             fail(code, message);
             return;
         }
@@ -448,6 +459,19 @@ void BaseViewModel::load_collection(CollectionKind kind) {
         }
         collection_ = std::move(items);
         collection_revision_subject_.set(collection_revision_subject_.value() + 1);
+    });
+}
+
+void BaseViewModel::load_home() {
+    const std::string source = active_source_;
+    client_.call("source.call",
+                 ipc::Json{{"source", source}, {"method", "home"}, {"params", ipc::Json::object()}},
+                 [this](const ipc::Json& result, const std::string& code, const std::string& message) {
+        if (!code.empty()) {
+            fail(code, message);
+            return;
+        }
+        apply_browse(result);
     });
 }
 

@@ -29,12 +29,14 @@ protected:
 private:
     enum class Mode {
         Menu,
+        Home,
         Songs,
         Collection,
         Liked,
     };
 
     void build_menu();
+    void build_home();
     void build_songs();
     void build_collection();
     void build_liked();
@@ -44,7 +46,7 @@ private:
     Mode mode_ = Mode::Menu;
     lv_obj_t* content_{nullptr};
     std::unique_ptr<view::widgets::TrackList> list_;
-    std::array<lv_obj_t*, 5> menu_rows_{};
+    std::array<lv_obj_t*, 6> menu_rows_{};
     std::array<lv_obj_t*, 6> rows_{};
     std::array<lv_obj_t*, 6> titles_{};
     std::array<lv_obj_t*, 6> subtitles_{};

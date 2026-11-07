@@ -172,6 +172,7 @@ public:
     void browse(const std::string& page = "songs");
     void load_collection(CollectionKind kind);
     void load_liked();
+    void load_home();
     void load_recent();
     void open_collection_item(std::size_t index);
     const std::vector<CollectionItem>& collection() const { return collection_; }
@@ -208,6 +209,7 @@ private:
     void apply_state(const ipc::Json& state);
     void apply_sources(const ipc::Json& sources);
     void apply_settings(const ipc::Json& settings);
+    void request_browse(const std::string& source, const std::string& page, int fallback);
     void apply_browse(const ipc::Json& browse);
     void apply_tracks(const ipc::Json& tracks, const std::string& title);
     void apply_connection_status();
