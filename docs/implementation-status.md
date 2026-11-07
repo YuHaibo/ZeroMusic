@@ -99,6 +99,7 @@ cmake --build build/dev -j8
 - 截图：[Browse](../screenshot/zero-music-browse.png) /
   [Search](../screenshot/zero-music-search.png)。
 
+- Now Playing 按 `L` 喜欢/取消喜欢当前曲目，状态来自 `isLiked`。
 - Queue 页按播放顺序显示队列，Enter 跳转，Backspace 删除。
 - Lyrics 页显示当前行及前后行，自动跟随播放，上下可手动滚动；core 在歌词
   加载后补发一次完整 `player.state`。
@@ -167,7 +168,7 @@ v1 不做中文输入：只保证 ASCII 输入与 CJK 显示。
 已验证产物（2026-11-07）：
 
 - `dist/zero-music_0.2.1_rev1_arm64.deb`，约 7.6 MB，sha256
-  `b7b1cc2849989696d4b985cb1267133bdc19a9208f2fa4ade6f14753e7781dbe`；
+  `5a66718f978d0ba028cbe32a1d14351ea3b41a5edfcb66dbdc1dd14c07f825ac`；
 - `Architecture: arm64`，`Maintainer: H.B. Yu <mail@yuhaibo.com>`；
 - 包内含 `/usr/bin/zero-music`（wrapper）、`zero-music-core`（aarch64 ELF）、
   `zero-music-ui`（aarch64 ELF）、`/etc/zero-music.conf`、APPLaunch 桌面项与

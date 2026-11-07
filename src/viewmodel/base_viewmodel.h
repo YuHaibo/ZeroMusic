@@ -118,6 +118,7 @@ public:
     void volume_delta(int delta);
     void cycle_repeat();
     void toggle_shuffle();
+    void toggle_like();
     void refresh();
 
     void cycle_quality();
@@ -142,6 +143,7 @@ public:
     void load_account(std::size_t index);
     void sign_out_account();
     lv_subject_t* account_subject();
+    lv_subject_t* liked_subject();
     void load_plugin_settings(std::size_t index);
     void save_plugin_setting(std::size_t index, const std::string& value);
     const std::vector<PluginSetting>& plugin_settings() const { return plugin_settings_; }
@@ -222,6 +224,8 @@ private:
     int queue_at_ = -1;
     std::vector<LyricItem> lyrics_;
     std::string track_id_;
+    std::string current_track_id_;
+    bool liked_ = false;
     std::vector<PluginItem> plugins_;
     std::vector<PluginSetting> plugin_settings_;
     std::string plugin_settings_id_;
@@ -254,6 +258,7 @@ private:
     reactive::StringSubject<512> prompt_qr_subject_;
     reactive::StringSubject<256> prompt_text_subject_;
     reactive::StringSubject<96> account_subject_;
+    reactive::BoolSubject liked_subject_;
     reactive::IntSubject cover_revision_subject_;
     reactive::IntSubject collection_revision_subject_;
     reactive::IntSubject sources_revision_subject_;

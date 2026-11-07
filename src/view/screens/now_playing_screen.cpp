@@ -120,6 +120,12 @@ void NowPlayingScreen::build_content(lv_obj_t* content) {
     lv_obj_align(hints, LV_ALIGN_BOTTOM_MID, 0, -20);
     lv_obj_set_style_text_color(hints, colors.text_disabled, 0);
 
+    auto* like = lv_label_create(content);
+    reactive::bind_bool_text(like, view_model().liked_subject(), "LIKE", "LIKED");
+    lv_obj_set_style_text_font(like, caption ? caption : &lv_font_montserrat_10, 0);
+    lv_obj_align(like, LV_ALIGN_TOP_LEFT, 98, 80);
+    lv_obj_set_style_text_color(like, colors.primary, 0);
+
     lv_subject_add_observer_obj(view_model().cover_revision_subject(), cover_changed, content, this);
     refresh_cover();
 
@@ -184,6 +190,10 @@ bool NowPlayingScreen::handle_key(std::uint32_t key, bool long_pressed) {
             return true;
         case LV_KEY_ENTER:
             view_model().toggle_play();
+            return true;
+        case 'l':
+        case 'L':
+            view_model().toggle_like();
             return true;
         default:
             return false;

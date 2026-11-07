@@ -117,6 +117,7 @@ BaseViewModel::BaseViewModel()
       prompt_qr_subject_(""),
       prompt_text_subject_("Start sign-in from Plugins"),
       account_subject_("Not signed in"),
+      liked_subject_(false),
       cover_revision_subject_(0),
       collection_revision_subject_(0),
       sources_revision_subject_(0),
@@ -224,6 +225,7 @@ lv_subject_t* BaseViewModel::plugin_settings_revision_subject() { return plugin_
 lv_subject_t* BaseViewModel::prompt_qr_subject() { return prompt_qr_subject_.native(); }
 lv_subject_t* BaseViewModel::prompt_text_subject() { return prompt_text_subject_.native(); }
 lv_subject_t* BaseViewModel::account_subject() { return account_subject_.native(); }
+lv_subject_t* BaseViewModel::liked_subject() { return liked_subject_.native(); }
 lv_subject_t* BaseViewModel::cover_revision_subject() { return cover_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::collection_revision_subject() { return collection_revision_subject_.native(); }
 lv_subject_t* BaseViewModel::sources_revision_subject() { return sources_revision_subject_.native(); }
@@ -805,6 +807,18 @@ void BaseViewModel::load_cover(const std::string& url, int size) {
     });
 }
 
+void BaseViewModel::toggle_like() {
+    if (current_track_id_.empty()) {
+        return;
+    }
+    liked_ = !liked_;
+    liked_subject_.set(liked_);
+    client_.call("source.call",
+                 ipc::Json{{"source", active_source_},
+                           {"method", "like"},
+                           {"params", ipc::Json{{"id", current_track_id_}, {"on", liked_}}}});
+}
+
 void BaseViewModel::refresh() {
     client_.call("player.state", ipc::Json::object(), [this](const ipc::Json& result,
                                                              const std::string& code,
@@ -960,8 +974,26 @@ void BaseViewModel::apply_state(const ipc::Json& state) {
     if (!new_id.empty() && new_id != track_id_) {
         lyrics_.clear();
         lyrics_revision_subject_.set(lyrics_revision_subject_.value() + 1);
+        liked_ = false;
+        liked_subject_.set(false);
+        current_track_id_ = new_id;
+        const std::string source = active_source_;
+        client_.call("source.call",
+                     ipc::Json{{"source", source},
+                               {"method", "isLiked"},
+                               {"params", ipc::Json{{"ids", ipc::Json::array({new_id})}}}},
+                     [this, new_id](const ipc::Json& result, const std::string& code, const std::string&) {
+            if (!code.empty() || !result.is_object()) {
+                return;
+            }
+            if (current_track_id_ == new_id && result.contains(new_id) && result[new_id].is_boolean()) {
+                liked_ = result[new_id].get<bool>();
+                liked_subject_.set(liked_);
+            }
+        });
     }
     track_id_ = new_id;
+    current_track_id_ = new_id;
     model_.set_track(shown);
     has_track_subject_.set(shown.valid);
     if (shown.valid) {
